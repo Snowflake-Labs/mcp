@@ -113,7 +113,7 @@ Register the MCP server in cursor by opening Cursor and navigating to Settings -
 
 Add the MCP server as context in the chat.
 
-<img src="./images/Cursor.gif" width="800" height="500"/>
+<img src="/images/Cursor.gif" width="800" height="500"/>
 
 For troubleshooting Cursor server issues, view the logs by opening the Output panel and selecting Cursor MCP from the dropdown menu.
 
@@ -140,7 +140,7 @@ mcp:
                 SNOWFLAKE_USER: <add-snowflake-username>
 ```
 
-<img src="./images/fast-agent.gif" width="800" height="500"/>
+<img src="/images/fast-agent.gif" width="800" height="500"/>
 
 
 # Troubleshooting
