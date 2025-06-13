@@ -3,7 +3,7 @@ from unittest.mock import Mock, patch
 import json
 from snowflake.connector.errors import Error as SnowflakeError
 
-from .connection import SnowflakeConnectionManager
+from mcp_server_snowflake.connection import SnowflakeConnectionManager
 from snowflake.connector import DictCursor
 
 
