@@ -80,6 +80,7 @@ class SnowflakeConnectionManager:
         self,
         session_parameters: Optional[Dict[str, Any]] = None,
         use_dict_cursor: bool = False,
+        **kwargs: Any,
     ) -> Tuple[Any, Any]:
         """
         Get a Snowflake connection with the specified configuration.
@@ -92,6 +93,8 @@ class SnowflakeConnectionManager:
             Additional session parameters to merge with defaults
         use_dict_cursor : bool, default=False
             Whether to use DictCursor instead of regular cursor
+        **kwargs : Any
+            Additional connection parameters (e.g., role, warehouse) to pass to connect()
 
         Yields
         ------
@@ -100,7 +103,11 @@ class SnowflakeConnectionManager:
 
         Examples
         --------
-        >>> with connection_manager.get_connection(use_dict_cursor=True) as (con, cur):
+        >>> with connection_manager.get_connection(
+        ...     role="ANALYST",
+        ...     warehouse="COMPUTE_WH",
+        ...     use_dict_cursor=True
+        ... ) as (con, cur):
         ...     cur.execute("SELECT current_version()")
         ...     result = cur.fetchone()
         """
@@ -110,11 +117,13 @@ class SnowflakeConnectionManager:
             merged_params.update(session_parameters)
 
         try:
+            # Pass all kwargs to connect() along with base parameters
             connection = connect(
                 account=self.account_identifier,
                 user=self.username,
                 password=self.pat,
                 session_parameters=merged_params,
+                **kwargs,
             )
 
             cursor = (
