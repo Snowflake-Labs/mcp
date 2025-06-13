@@ -1,4 +1,4 @@
-cortex_complete: # Set default model if one is not specified by user in Cortex Copmlete tool
+cortex_complete: # Set default model if one is not specified by user in Cortex Complete tool
   default_model: "snowflake-llama-3.3-70b"
 search_services: # List all Cortex Search services
   - service_name: "<service_name>"
