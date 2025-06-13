@@ -20,7 +20,7 @@ from mcp.server import Server, NotificationOptions
 import mcp.types as types
 import mcp.server.stdio
 from mcp.server.models import InitializationOptions
-from snowflake.connector import connect
+from mcp_server_snowflake.connection import SnowflakeConnectionManager
 
 import mcp_server_snowflake.tools as tools
 
@@ -87,6 +87,11 @@ class SnowflakeService:
         self.search_services = []
         self.analyst_services = []
         self.agent_services = []
+
+        self.connection_manager = SnowflakeConnectionManager(
+            account_identifier=account_identifier, username=username, pat=pat
+        )
+
         self.unpack_service_specs()
         self.set_query_tag(
             major_version=tag_major_version, minor_version=tag_minor_version
@@ -155,17 +160,9 @@ class SnowflakeService:
             query_tag["version"] = {"major": major_version, "minor": minor_version}
 
         try:
-            with (
-                connect(
-                    account=self.account_identifier,
-                    user=self.username,
-                    password=self.pat,
-                    session_parameters={
-                        "QUERY_TAG": json.dumps(query_tag),
-                    },
-                ) as con,
-                con.cursor() as cur,
-            ):
+            # Use connection manager to set query tag and test connection
+            self.connection_manager.set_query_tag(query_tag)
+            with self.connection_manager.get_connection() as (con, cur):
                 cur.execute("SELECT 1").fetchone()
         except Exception as e:
             logger.warning(f"Error setting query tag: {e}")

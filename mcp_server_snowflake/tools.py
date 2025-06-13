@@ -15,10 +15,9 @@ from collections import OrderedDict
 
 import mcp.types as types
 from bs4 import BeautifulSoup
-from snowflake.connector import DictCursor
-from snowflake.connector import connect
 
 from mcp_server_snowflake.utils import SnowflakeResponse, SnowflakeException
+from mcp_server_snowflake.connection import SnowflakeConnectionManager
 
 
 sfse = SnowflakeResponse()  # For parsing Snowflake responses
@@ -370,14 +369,11 @@ def get_region(
     """
 
     statement = "SELECT CURRENT_REGION()"
-    with (
-        connect(
-            account=account_identifier,
-            user=username,
-            password=PAT,
-        ) as con,
-        con.cursor(DictCursor) as cur,
-    ):
+    connection_manager = SnowflakeConnectionManager(
+        account_identifier=account_identifier, username=username, pat=PAT
+    )
+
+    with connection_manager.get_connection(use_dict_cursor=True) as (con, cur):
         cur.execute(statement)
         return cur.fetchone().get("CURRENT_REGION()")
 

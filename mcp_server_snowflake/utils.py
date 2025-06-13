@@ -14,11 +14,11 @@ from functools import wraps
 from typing import Awaitable, Callable, TypeVar, Optional, Union
 from typing_extensions import ParamSpec
 import json
-from snowflake.connector import DictCursor
-from snowflake.connector import connect
 from pydantic import BaseModel
 import ast
 from textwrap import dedent
+
+from mcp_server_snowflake.connection import SnowflakeConnectionManager
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -154,10 +154,13 @@ class SnowflakeResponse:
         snowflake.connector.errors.Error
             If connection fails or SQL execution encounters an error
         """
-        with (
-            connect(**kwargs) as con,
-            con.cursor(DictCursor) as cur,
-        ):
+        connection_manager = SnowflakeConnectionManager(
+            account_identifier=kwargs.get("account"),
+            username=kwargs.get("user"),
+            pat=kwargs.get("password"),
+        )
+
+        with connection_manager.get_connection(use_dict_cursor=True) as (con, cur):
             cur.execute(statement)
             return cur.fetchall()
 
