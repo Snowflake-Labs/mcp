@@ -39,8 +39,8 @@ class SnowflakeService:
     Snowflake service configuration and management.
 
     This class handles the configuration and setup of Snowflake Cortex services
-    including search, analyst, and agent services. It loads service specifications
-    from a YAML configuration file and provides access to service parameters.
+    including complete, search, and analyst. It loads service specifications from a
+    YAML configuration file and provides access to service parameters.
 
     Parameters
     ----------
