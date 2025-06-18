@@ -1,0 +1,13 @@
+services:
+  mcp-server-snowflake:
+    build: .
+    container_name: mcp-server-snowflake
+    environment:
+      - SNOWFLAKE_PAT=${SNOWFLAKE_PAT}
+      - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
+      - SNOWFLAKE_USER=${SNOWFLAKE_USER}
+    volumes:
+      - ${HOME}/.mcp/snowflake_mcp_config.yaml:/app/services/custom_config.yaml
+    ports:
+      - "9000:9000"
+    restart: unless-stopped
