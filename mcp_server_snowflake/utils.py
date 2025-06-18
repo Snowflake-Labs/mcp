@@ -9,15 +9,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import ast
+import json
+from functools import wraps
+from textwrap import dedent
+from typing import Awaitable, Callable, Optional, TypeVar, Union
+
 import requests
 import yaml
-from functools import wraps
-from typing import Awaitable, Callable, TypeVar, Optional, Union
-from typing_extensions import ParamSpec
-import json
 from pydantic import BaseModel
-import ast
-from textwrap import dedent
+from typing_extensions import ParamSpec
 
 from mcp_server_snowflake.connection import SnowflakeConnectionManager
 
@@ -294,7 +295,7 @@ class SnowflakeResponse:
         api: str,
     ) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
         """
-        Decorator factory for consistent response parsing across Cortex APIs.
+        Create decorator factory for consistent response parsing across Cortex APIs.
 
         Creates a decorator that automatically parses responses from different
         Cortex API endpoints based on the specified API type. The decorator

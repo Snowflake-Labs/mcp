@@ -12,10 +12,11 @@
 import pytest
 from unittest.mock import Mock, patch
 import json
+
+from snowflake.connector import DictCursor
 from snowflake.connector.errors import Error as SnowflakeError
 
 from mcp_server_snowflake.connection import SnowflakeConnectionManager
-from snowflake.connector import DictCursor
 
 
 @pytest.fixture

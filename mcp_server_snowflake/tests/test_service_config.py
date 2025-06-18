@@ -12,6 +12,7 @@
 import pytest
 import yaml
 from pathlib import Path
+
 from mcp_server_snowflake.server import SnowflakeService
 
 

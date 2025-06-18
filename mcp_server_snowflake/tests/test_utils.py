@@ -11,6 +11,7 @@
 # limitations under the License.
 from unittest.mock import MagicMock
 import json
+
 from mcp_server_snowflake.utils import SnowflakeResponse
 
 

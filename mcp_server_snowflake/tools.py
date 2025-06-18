@@ -9,17 +9,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import requests
-from typing import Optional
 from collections import OrderedDict
+from typing import Annotated, Optional
 
+import requests
 from bs4 import BeautifulSoup
-from typing import Annotated
 from pydantic import Field
 
-from mcp_server_snowflake.utils import SnowflakeResponse, SnowflakeException
-from mcp_server_snowflake.connection import SnowflakeConnectionManager
 import mcp_server_snowflake.prompts as prompts
+from mcp_server_snowflake.connection import SnowflakeConnectionManager
+from mcp_server_snowflake.utils import SnowflakeException, SnowflakeResponse
 
 sfse = SnowflakeResponse()  # For parsing Snowflake responses
 
@@ -432,14 +431,14 @@ async def get_cortex_models(
 def create_get_cortex_models_wrapper(**kwargs):
     async def get_cortex_models_wrapper():
         """
-        Retrieves available Cortex Complete models and their regional availability.
+        Retrieve available Cortex Complete models and their regional availability.
 
         This async wrapper is designed to be used as a tool in the MCP server, allowing
         clients to fetch the list of available Snowflake Cortex Complete models and their
         availability in the current Snowflake region.
 
         Parameters
-        -------
+        ----------
         None
 
         Returns

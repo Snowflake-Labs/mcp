@@ -11,21 +11,21 @@
 # limitations under the License.
 import os
 import argparse
-from typing import Optional
-import yaml
-import logging
 import json
+import logging
 from pathlib import Path
+from typing import Optional
 
+import yaml
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
 
+import mcp_server_snowflake.tools as tools
 from mcp_server_snowflake.connection import SnowflakeConnectionManager
 from mcp_server_snowflake.utils import (
     MissingArgumentsException,
     load_tools_config_resource,
 )
-import mcp_server_snowflake.tools as tools
 
 server_name = "mcp-server-snowflake"
 tag_major_version = 1
@@ -217,7 +217,7 @@ def get_var(var_name: str, env_var_name: str, args) -> str | None:
 
 def create_snowflake_service():
     """
-    Main entry point for the Snowflake MCP server package.
+    Create main entry point for the Snowflake MCP server package.
 
     Parses command line arguments, retrieves configuration from arguments or
     environment variables, validates required parameters, and starts the
