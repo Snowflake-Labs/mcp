@@ -12,8 +12,9 @@
 import json
 import logging
 from contextlib import contextmanager
-from typing import Optional, Dict, Any, Tuple
-from snowflake.connector import connect, DictCursor
+from typing import Any, Dict, Generator, Optional, Tuple
+
+from snowflake.connector import DictCursor, connect
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +82,7 @@ class SnowflakeConnectionManager:
         session_parameters: Optional[Dict[str, Any]] = None,
         use_dict_cursor: bool = False,
         **kwargs: Any,
-    ) -> Tuple[Any, Any]:
+    ) -> Generator[Tuple[Any, Any], None, None]:
         """
         Get a Snowflake connection with the specified configuration.
 
