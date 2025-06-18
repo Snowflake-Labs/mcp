@@ -378,7 +378,10 @@ def main():
     initialize_tools(snowflake_service)
     initialize_resources(snowflake_service)
 
-    server.run(transport=snowflake_service.transport)
+    if snowflake_service.transport in ["sse", "streamable-http"]:
+        server.run(transport=snowflake_service.transport, host="0.0.0.0", port=9000)
+    else:
+        server.run(transport=snowflake_service.transport)
 
 
 if __name__ == "__main__":
