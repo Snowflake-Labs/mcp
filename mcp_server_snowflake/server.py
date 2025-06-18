@@ -50,7 +50,7 @@ class SnowflakeService:
         Snowflake username for authentication
     pat : str
         Programmatic Access Token for Snowflake authentication
-    config_path : str
+    service_config_file : str
         Path to the service configuration YAML file
     transport : str
         Transport for the MCP server
@@ -63,7 +63,7 @@ class SnowflakeService:
         Snowflake username
     pat : str
         Programmatic Access Token
-    config_path : str
+    service_config_file : str
         Path to configuration file
     transport : str
         Transport for the MCP server
@@ -82,15 +82,15 @@ class SnowflakeService:
         account_identifier: str,
         username: str,
         pat: str,
-        config_path: str,
-        transport: Literal["stdio", "sse", "streamable-http"] = "stdio",
+        service_config_file: str,
+        transport: str,
     ):
         self.account_identifier = account_identifier
         self.username = username
         self.pat = pat
-        self.config_path = config_path
-        self.config_path_uri = Path(config_path).resolve().as_uri()
-        self.transport = transport
+        self.service_config_file = service_config_file
+        self.config_path_uri = Path(service_config_file).resolve().as_uri()
+        self.transport: Literal["stdio", "sse", "streamable-http"] = transport
         self.default_complete_model = None
         self.search_services = []
         self.analyst_services = []
@@ -115,10 +115,12 @@ class SnowflakeService:
         """
         try:
             # Load the service configuration from a YAML file
-            with open(self.config_path, "r") as file:
+            with open(self.service_config_file, "r") as file:
                 service_config = yaml.safe_load(file)
         except FileNotFoundError:
-            logger.error(f"Service configuration file not found: {self.config_path}")
+            logger.error(
+                f"Service configuration file not found: {self.service_config_file}"
+            )
             raise
         except yaml.YAMLError as e:
             logger.error(f"Error parsing YAML file: {e}")
@@ -149,7 +151,7 @@ class SnowflakeService:
 
     def set_query_tag(
         self,
-        query_tag: dict[str, str] = {"origin": "sf_sit", "name": "mcp_server"},
+        query_tag: dict[str, str | dict] = {"origin": "sf_sit", "name": "mcp_server"},
         major_version: Optional[int] = None,
         minor_version: Optional[int] = None,
     ) -> None:
@@ -177,7 +179,7 @@ class SnowflakeService:
             logger.warning(f"Error setting query tag: {e}")
 
 
-def get_var(var_name: str, env_var_name: str, args) -> str | None:
+def get_var(var_name: str, env_var_name: str, args) -> str:
     """
     Retrieve variable value from command line arguments or environment variables.
 
@@ -196,7 +198,7 @@ def get_var(var_name: str, env_var_name: str, args) -> str | None:
 
     Returns
     -------
-    str | None
+    str
         The variable value if found in either source, None otherwise
 
     Examples
@@ -215,10 +217,8 @@ def get_var(var_name: str, env_var_name: str, args) -> str | None:
 
     if getattr(args, var_name):
         return getattr(args, var_name)
-    elif env_var_name in os.environ:
+    if env_var_name in os.environ:
         return os.environ[env_var_name]
-    else:
-        return None
 
 
 def create_snowflake_service():
@@ -247,7 +247,7 @@ def create_snowflake_service():
     - account_identifier: Snowflake account identifier
     - username: Snowflake username
     - pat: Programmatic Access Token for authentication
-    - service-config-file: Path to service configuration file
+    - service_config_file: Path to service configuration file
 
     """
     parser = argparse.ArgumentParser(description="Snowflake MCP Server")
@@ -284,7 +284,7 @@ def create_snowflake_service():
         account_identifier=account_identifier,
         username=username,
         pat=pat,
-        config_path=service_config_file,
+        service_config_file=service_config_file,
         transport=args.transport,
     )
 
@@ -292,10 +292,10 @@ def create_snowflake_service():
         raise MissingArgumentsException(
             missing=[k for k, v in parameters.items() if not v]
         ) from None
+    else:
+        snowflake_service = SnowflakeService(**parameters)
 
-    snowflake_service = SnowflakeService(**parameters)
-
-    return snowflake_service
+        return snowflake_service
 
 
 server = FastMCP("Snowflake MCP Server")
@@ -309,7 +309,9 @@ def initialize_resources(snowflake_service):
 
         Provides access to the YAML tools configuration file as JSON.
         """
-        tools_config = await load_tools_config_resource(snowflake_service.config_path)
+        tools_config = await load_tools_config_resource(
+            snowflake_service.service_config_file
+        )
         return json.loads(tools_config)
 
 
