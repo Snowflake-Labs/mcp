@@ -14,7 +14,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import yaml
 from fastmcp import FastMCP
@@ -44,14 +44,16 @@ class SnowflakeService:
 
     Parameters
     ----------
-    account_identifier : str, optional
+    account_identifier : str
         Snowflake account identifier
-    username : str, optional
+    username : str
         Snowflake username for authentication
-    pat : str, optional
+    pat : str
         Programmatic Access Token for Snowflake authentication
-    config_path : str, optional
+    config_path : str
         Path to the service configuration YAML file
+    transport : str
+        Transport for the MCP server
 
     Attributes
     ----------
@@ -63,6 +65,8 @@ class SnowflakeService:
         Programmatic Access Token
     config_path : str
         Path to configuration file
+    transport : str
+        Transport for the MCP server
     default_complete_model : str
         Default model for Cortex Complete operations
     search_services : list
@@ -75,16 +79,18 @@ class SnowflakeService:
 
     def __init__(
         self,
-        account_identifier: Optional[str] = None,
-        username: Optional[str] = None,
-        pat: Optional[str] = None,
-        config_path: Optional[str] = None,
+        account_identifier: str,
+        username: str,
+        pat: str,
+        config_path: str,
+        transport: Literal["stdio", "sse", "streamable-http"] = "stdio",
     ):
         self.account_identifier = account_identifier
         self.username = username
         self.pat = pat
         self.config_path = config_path
         self.config_path_uri = Path(config_path).resolve().as_uri()
+        self.transport = transport
         self.default_complete_model = None
         self.search_services = []
         self.analyst_services = []
@@ -260,6 +266,13 @@ def create_snowflake_service():
         required=False,
         help="Path to service specification file",
     )
+    parser.add_argument(
+        "--transport",
+        required=False,
+        choices=["stdio", "sse", "streamable-http"],
+        help="Transport for the MCP server",
+        default="stdio",
+    )
 
     args = parser.parse_args()
     account_identifier = get_var("account_identifier", "SNOWFLAKE_ACCOUNT", args)
@@ -271,7 +284,8 @@ def create_snowflake_service():
         account_identifier=account_identifier,
         username=username,
         pat=pat,
-        service_config_file=service_config_file,
+        config_path=service_config_file,
+        transport=args.transport,
     )
 
     if not all(parameters.values()):
@@ -279,12 +293,7 @@ def create_snowflake_service():
             missing=[k for k, v in parameters.items() if not v]
         ) from None
 
-    snowflake_service = SnowflakeService(
-        account_identifier=account_identifier,
-        username=username,
-        pat=pat,
-        config_path=service_config_file,
-    )
+    snowflake_service = SnowflakeService(**parameters)
 
     return snowflake_service
 
@@ -367,7 +376,7 @@ def main():
     initialize_tools(snowflake_service)
     initialize_resources(snowflake_service)
 
-    server.run()
+    server.run(transport=snowflake_service.transport)
 
 
 if __name__ == "__main__":
