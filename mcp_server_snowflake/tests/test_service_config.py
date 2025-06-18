@@ -84,7 +84,13 @@ def missing_required_fields(tmp_path, base_config):
 
 def test_valid_config_loads_successfully(valid_config_yaml):
     """Test that a valid configuration file loads without errors"""
-    service = SnowflakeService(service_config_file=str(valid_config_yaml))
+    service = SnowflakeService(
+        account_identifier="",
+        username="",
+        pat="",
+        service_config_file=str(valid_config_yaml),
+        transport="",
+    )
     assert service.default_complete_model == "snowflake-llama-3.3-70b"
     assert len(service.search_services) == 1
     assert len(service.analyst_services) == 1
@@ -102,12 +108,25 @@ def test_valid_config_loads_successfully(valid_config_yaml):
 def test_invalid_yaml_raises_error(invalid_yaml):
     """Test that invalid YAML format raises YAMLError"""
     with pytest.raises(yaml.YAMLError):
-        SnowflakeService(service_config_file=str(invalid_yaml))
+        SnowflakeService(
+            account_identifier="",
+            username="",
+            pat="",
+            service_config_file=str(invalid_yaml),
+            transport="",
+        )
 
 
 def test_missing_fields_handled_gracefully(missing_required_fields):
     """Test that missing required fields are handled gracefully by returning None values"""
-    service = SnowflakeService(service_config_file=str(missing_required_fields))
+
+    service = SnowflakeService(
+        account_identifier="",
+        username="",
+        pat="",
+        service_config_file=str(missing_required_fields),
+        transport="",
+    )
 
     # Service should load but search service should have missing fields
     assert len(service.search_services) == 1
@@ -121,4 +140,10 @@ def test_missing_fields_handled_gracefully(missing_required_fields):
 def test_config_file_not_found():
     """Test that non-existent config file raises FileNotFoundError"""
     with pytest.raises(FileNotFoundError):
-        SnowflakeService(service_config_file=Path("nonexistent_config.yaml"))
+        SnowflakeService(
+            account_identifier="",
+            username="",
+            pat="",
+            service_config_file=Path("nonexistent_config.yaml"),
+            transport="",
+        )
