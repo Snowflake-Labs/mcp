@@ -105,9 +105,7 @@ class SnowflakeConnectionManager:
         Examples
         --------
         >>> with connection_manager.get_connection(
-        ...     role="ANALYST",
-        ...     warehouse="COMPUTE_WH",
-        ...     use_dict_cursor=True
+        ...     role="ANALYST", warehouse="COMPUTE_WH", use_dict_cursor=True
         ... ) as (con, cur):
         ...     cur.execute("SELECT current_version()")
         ...     result = cur.fetchone()

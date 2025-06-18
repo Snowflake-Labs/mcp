@@ -9,10 +9,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 import argparse
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -197,13 +197,13 @@ def get_var(var_name: str, env_var_name: str, args) -> str | None:
     --------
     Get account identifier from args or environment:
 
-    >>> args = parser.parse_args(['--account-identifier', 'myaccount'])
-    >>> get_var('account_identifier', 'SNOWFLAKE_ACCOUNT', args)
+    >>> args = parser.parse_args(["--account-identifier", "myaccount"])
+    >>> get_var("account_identifier", "SNOWFLAKE_ACCOUNT", args)
     'myaccount'
 
-    >>> os.environ['SNOWFLAKE_ACCOUNT'] = 'myaccount'
+    >>> os.environ["SNOWFLAKE_ACCOUNT"] = "myaccount"
     >>> args = parser.parse_args([])
-    >>> get_var('account_identifier', 'SNOWFLAKE_ACCOUNT', args)
+    >>> get_var("account_identifier", "SNOWFLAKE_ACCOUNT", args)
     'myaccount'
     """
 
