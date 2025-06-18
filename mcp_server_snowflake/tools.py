@@ -275,7 +275,7 @@ def create_chat_complete_wrapper(**kwargs):
         Returns
         -------
         dict
-            JSON response from the Cortex Search API containing search results
+            JSON response from the Cortex Complete API containing the generated text
 
         Raises
         ------
