@@ -47,32 +47,3 @@ Filtering on rows where NUMERIC column numeric_col is between 10.5 and 12.5 (inc
   { "@lte": { "numeric_col": 12.5 } }
 ]}
 """
-
-cortex_complete_response_format_description = """Optional JSON response format to use for the LLM response.
-Type must be 'json' and schema must be a valid JSON schema.
-Example:
-{
-    "type": "json",
-    "schema": {
-        "type": "object",
-        "properties": {
-        "people": {
-            "type": "array",
-            "items": {
-            "type": "object",
-            "properties": {
-                "name": {
-                "type": "string"
-                },
-                "age": {
-                "type": "number"
-                }
-            },
-            "required": ["name", "age"]
-            }
-        }
-        },
-        "required": ["people"]
-    }
-}
-"""

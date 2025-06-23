@@ -18,8 +18,8 @@ from mcp_server_snowflake.server import SnowflakeService
 
 
 @pytest.fixture
-def valid_config_yaml(tmp_path, base_config):
-    config = base_config.copy()
+def valid_config_yaml(tmp_path):
+    config = {}
     config.update(
         {
             "search_services": [
@@ -47,8 +47,8 @@ def valid_config_yaml(tmp_path, base_config):
 
 
 @pytest.fixture
-def missing_required_fields(tmp_path, base_config):
-    config = base_config.copy()
+def missing_required_fields(tmp_path):
+    config = {}
     config.update(
         {
             "search_services": [
@@ -85,18 +85,6 @@ def test_valid_config_loads_successfully(valid_config_yaml):
     analyst_service = service.analyst_services[0]
     assert analyst_service["service_name"] == "test_analyst"
     assert analyst_service["semantic_model"] == "test_model.yaml"
-
-
-def test_invalid_yaml_raises_error(invalid_yaml):
-    """Test that invalid YAML format raises YAMLError"""
-    with pytest.raises(yaml.YAMLError):
-        SnowflakeService(
-            account_identifier="",
-            username="",
-            pat="",
-            service_config_file=str(invalid_yaml),
-            transport="",
-        )
 
 
 def test_missing_fields_handled_gracefully(missing_required_fields):

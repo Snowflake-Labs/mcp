@@ -208,7 +208,7 @@ class SnowflakeResponse:
         Parameters
         ----------
         api : str
-            API type to handle. Must be one of: "complete", "analyst", "search"
+            API type to handle. Must be one of: "analyst", "search"
 
         Returns
         -------
@@ -217,9 +217,9 @@ class SnowflakeResponse:
 
         Examples
         --------
-        Decorating a function for Cortex Complete API:
+        Decorating a function for Cortex Analyst:
 
-        >>> @sfse.snowflake_response(api="complete")
+        >>> @sfse.snowflake_response(api="analyst")
         ... async def my_completion_function(prompt, **kwargs):
         ...     # Make API call
         ...     return raw_response
@@ -237,11 +237,6 @@ class SnowflakeResponse:
                     password=kwargs.get("PAT", ""),
                 )
                 match api:
-                    case "complete":
-                        structured = kwargs.get("response_format", {})
-                        parsed = self.parse_llm_response(
-                            response=raw_sse, structured=bool(structured)
-                        )
                     case "analyst":
                         parsed = self.parse_analyst_response(
                             response=raw_sse, **conn_kwargs
