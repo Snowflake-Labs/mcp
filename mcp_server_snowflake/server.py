@@ -133,18 +133,9 @@ class SnowflakeService:
             self.agent_services = service_config.get(
                 "agent_services", []
             )  # Not supported yet
-            self.default_complete_model = service_config.get("cortex_complete", {}).get(
-                "default_model", None
-            )
         except Exception as e:
             logger.error(f"Error extracting service specifications: {e}")
             raise
-
-        if self.default_complete_model is None:
-            logger.warning(
-                "No default model found in the service specification. Using snowflake-llama-3.3-70b as default."
-            )
-            self.default_complete_model = "snowflake-llama-3.3-70b"
 
     def set_query_tag(
         self,
