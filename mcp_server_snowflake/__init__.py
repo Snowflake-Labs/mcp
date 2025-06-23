@@ -18,10 +18,8 @@ integration with Snowflake's machine learning and AI capabilities through a
 standardized protocol interface.
 
 The package supports:
-- Cortex Complete: Large language model completions and chat
 - Cortex Search: Semantic search across Snowflake data
 - Cortex Analyst: Natural language to SQL query generation
-- Model discovery: Identify available models in region
 
 The server can be configured through command-line arguments or environment
 variables and uses a YAML configuration file to define service specifications.
