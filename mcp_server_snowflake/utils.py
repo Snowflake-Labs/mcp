@@ -9,7 +9,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import ast
 import json
 from functools import wraps
 from textwrap import dedent
@@ -227,67 +226,6 @@ class SnowflakeResponse:
         """
         content = response.json()
         ret = SearchResponse(results=content.get("results", []))
-        return ret.model_dump_json()
-
-    def parse_llm_response(
-        self, response: requests.models.Response | dict, structured: bool = False
-    ) -> str | list | dict:
-        """
-        Parse Cortex Complete LLM API response from Server-Sent Events.
-
-        Processes streaming SSE response from the Cortex Complete API,
-        extracting text content and optionally parsing structured JSON
-        responses based on provided schemas.
-
-        Parameters
-        ----------
-        response : requests.models.Response | dict
-            Raw streaming response from Cortex Complete API
-        structured : bool, optional
-            Whether to parse response as structured JSON, by default False
-
-        Returns
-        -------
-        str | list | dict
-            JSON string containing either plain text or structured data
-            depending on the structured parameter
-
-        Raises
-        ------
-        json.JSONDecodeError
-            If SSE event data cannot be parsed as JSON
-        SyntaxError
-            If structured response cannot be parsed as valid Python literal
-        """
-        sse_events = dict(events=[])
-        content_text = []
-        for event in response.iter_lines():
-            if not event.strip():
-                continue
-
-            decoded = event.decode("utf-8")
-            if not decoded.startswith("data: "):
-                continue
-
-            event_row = decoded.removeprefix("data: ")
-            try:
-                sse_events["events"].append(json.loads(event_row))
-            except json.JSONDecodeError as e:
-                raise e
-
-        for event in sse_events["events"]:
-            delta = event.get("choices")[0].get("delta", {})
-            if delta.get("type") == "text":
-                if content := delta.get("content"):
-                    content_text.append(content)
-
-        if structured:
-            ret = CompleteResponseStructured(
-                results=ast.literal_eval("".join(content_text))
-            )
-        else:
-            ret = CompleteResponse(results="".join(content_text))
-
         return ret.model_dump_json()
 
     def snowflake_response(
