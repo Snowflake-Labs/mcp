@@ -76,7 +76,7 @@ Set the path to the service configuration file and values for environment variab
         "mcp-server-snowflake",
         "--service-config-file",
         "<path to file>/tools_config.yaml"
-      ]
+      ],
       "env": {
         "SNOWFLAKE_PAT": "<programmatic_access_token>",
         "SNOWFLAKE_ACCOUNT": "<account-identifier>",
