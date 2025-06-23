@@ -290,7 +290,7 @@ class SnowflakeException(Exception):
     Raising a Snowflake exception:
 
     >>> raise SnowflakeException(
-    ...     tool="Cortex Complete", message="Model not found", status_code=400
+    ...     tool="Cortex Analyst", message="Model not found", status_code=400
     ... )
     """
 

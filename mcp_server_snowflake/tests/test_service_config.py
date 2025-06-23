@@ -18,11 +18,6 @@ from mcp_server_snowflake.server import SnowflakeService
 
 
 @pytest.fixture
-def base_config():
-    return {"cortex_complete": {"default_model": "snowflake-llama-3.3-70b"}}
-
-
-@pytest.fixture
 def valid_config_yaml(tmp_path, base_config):
     config = base_config.copy()
     config.update(
@@ -48,18 +43,6 @@ def valid_config_yaml(tmp_path, base_config):
     config_file = tmp_path / "test_service_config.yaml"
     with open(config_file, "w") as f:
         yaml.dump(config, f)
-    return config_file
-
-
-@pytest.fixture
-def invalid_yaml(tmp_path):
-    config_file = tmp_path / "invalid_service_config.yaml"
-    with open(config_file, "w") as f:
-        f.write("""
-        cortex_complete:
-          default_model: "snowflake-llama-3.3-70b"
-          search_services: - invalid yaml format
-        """)
     return config_file
 
 
@@ -91,7 +74,6 @@ def test_valid_config_loads_successfully(valid_config_yaml):
         service_config_file=str(valid_config_yaml),
         transport="",
     )
-    assert service.default_complete_model == "snowflake-llama-3.3-70b"
     assert len(service.search_services) == 1
     assert len(service.analyst_services) == 1
 
