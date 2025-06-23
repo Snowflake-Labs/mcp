@@ -39,7 +39,7 @@ class SnowflakeService:
     Snowflake service configuration and management.
 
     This class handles the configuration and setup of Snowflake Cortex services
-    including complete, search, and analyst. It loads service specifications from a
+    including search, and analyst. It loads service specifications from a
     YAML configuration file and provides access to service parameters.
 
     Parameters
@@ -67,8 +67,6 @@ class SnowflakeService:
         Path to configuration file
     transport : str
         Transport for the MCP server
-    default_complete_model : str
-        Default model for Cortex Complete operations
     search_services : list
         List of configured search service specifications
     analyst_services : list
@@ -91,7 +89,6 @@ class SnowflakeService:
         self.service_config_file = service_config_file
         self.config_path_uri = Path(service_config_file).resolve().as_uri()
         self.transport: Literal["stdio", "sse", "streamable-http"] = transport
-        self.default_complete_model = None
         self.search_services = []
         self.analyst_services = []
         self.agent_services = []
