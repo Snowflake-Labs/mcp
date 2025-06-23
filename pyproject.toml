@@ -10,7 +10,6 @@ authors = [
   {name = "Tyler White"},
 ]
 dependencies = [
-    "beautifulsoup4>=4.13.4",
     "fastmcp>=2.8.1",
     "mcp[cli]>=1.9.4",
     "pydantic>=2.11.4",
