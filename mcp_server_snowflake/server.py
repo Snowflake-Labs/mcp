@@ -350,28 +350,6 @@ def initialize_tools(snowflake_service):
                     )
                 )
 
-        chat_complete_wrapper = tools.create_chat_complete_wrapper(
-            snowflake_service=snowflake_service
-        )
-        server.add_tool(
-            Tool.from_function(
-                fn=chat_complete_wrapper,
-                name="cortex_complete",
-                description="Generate text completions using Snowflake Cortex Complete API.",
-            )
-        )
-
-        get_cortex_models_wrapper = tools.create_get_cortex_models_wrapper(
-            snowflake_service=snowflake_service
-        )
-        server.add_tool(
-            Tool.from_function(
-                fn=get_cortex_models_wrapper,
-                name="get_cortex_models",
-                description="Retrieves available Cortex Complete models and their regional availability.",
-            )
-        )
-
 
 def main():
     snowflake_service = create_snowflake_service()
