@@ -63,37 +63,6 @@ class SearchResponse(BaseModel):
     results: Union[str, dict, list]
 
 
-class CompleteResponse(BaseModel):
-    """
-    Response model for Cortex Complete API results.
-
-    Represents the response from Cortex Complete for unstructured text generation.
-
-    Attributes
-    ----------
-    results : str | dict | list
-        Generated text or content from the language model
-    """
-
-    results: Union[str, dict, list]
-
-
-class CompleteResponseStructured(BaseModel):
-    """
-    Response model for structured Cortex Complete API results.
-
-    Represents the response from Cortex Complete when using structured
-    JSON output with a defined schema.
-
-    Attributes
-    ----------
-    results : dict | list
-        Structured data conforming to the provided JSON schema
-    """
-
-    results: Union[dict, list]
-
-
 class SnowflakeResponse:
     """
     Response parser and decorator provider for Snowflake Cortex APIs.
@@ -103,7 +72,6 @@ class SnowflakeResponse:
     executes SQL queries, and formats responses consistently across all services.
 
     The class supports three main API types:
-    - complete: Language model completion responses
     - analyst: Cortex Analyst responses
     - search: Cortex search responses
 
@@ -112,8 +80,8 @@ class SnowflakeResponse:
     Basic usage with decorator:
 
     >>> sfse = SnowflakeResponse()
-    >>> @sfse.snowflake_response(api="complete")
-    ... async def my_complete_function():
+    >>> @sfse.snowflake_response(api="analyst")
+    ... async def my_analyst_function():
     ...     # Function implementation
     ...     pass
 
@@ -125,8 +93,6 @@ class SnowflakeResponse:
         Parse Cortex Analyst API responses
     parse_search_response(response)
         Parse Cortex Search API responses
-    parse_llm_response(response, structured=False)
-        Parse Cortex Complete API responses
     snowflake_response(api)
         Decorator factory for response parsing
     """
