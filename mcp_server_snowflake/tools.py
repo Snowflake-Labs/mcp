@@ -528,7 +528,7 @@ async def query_cortex_analyst(
     if semantic_model.startswith("@") and semantic_model.endswith(".yaml"):
         semantic_type = "semantic_model_file"
     else:
-        semantic_type = "semantic_model_view"
+        semantic_type = "semantic_view"
 
     payload = {
         "messages": [
