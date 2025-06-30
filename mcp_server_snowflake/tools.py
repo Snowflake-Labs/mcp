@@ -58,6 +58,8 @@ async def query_cortex_search(
         List of columns to return for each relevant result, by default None
     filter_query : dict, optional
         Filter query to apply to search results, by default {}
+    limit : int, optional
+        Limit on the number of results to return, by default 10
 
     Returns
     -------
@@ -108,6 +110,11 @@ async def query_cortex_search(
 
 
 def create_search_wrapper(**kwargs):
+    # Extract default values from service configuration
+    service_details = kwargs.get("service_details", {})
+    default_columns = service_details.get("columns", [])
+    default_limit = service_details.get("limit", 10)
+
     async def search_wrapper(
         query: Annotated[
             str, Field(description="User query to search in search service")
@@ -117,13 +124,10 @@ def create_search_wrapper(**kwargs):
             Field(
                 description="Optional list of columns to return for each relevant result in the response"
             ),
-        ] = [],
+        ] = default_columns,
         filter_query: Annotated[
             dict, Field(description=prompts.cortex_search_filter_description)
         ] = {},
-        limit: Annotated[
-            int, Field(description="Optional limit on the number of results to return")
-        ] = 10,
     ):
         """
         Search using Cortex Search Service.
@@ -161,7 +165,7 @@ def create_search_wrapper(**kwargs):
                 database_name=service_details.get("database_name"),
                 schema_name=service_details.get("schema_name"),
                 PAT=snowflake_service.pat,
-                limit=limit,
+                limit=default_limit,
             )
 
     return search_wrapper

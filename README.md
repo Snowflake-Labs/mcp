@@ -24,11 +24,15 @@ search_services: # List all Cortex Search services
       "<Search services that ...>"
     database_name: "<database_name>"
     schema_name: "<schema_name>"
+    columns: [] # Optional: List of columns to return for each relevant result (default: [])
+    limit: 10 # Optional: Limit on the number of results to return (default: 10)
   - service_name: "<service_name>"
     description: > # Should start with "Search service that ..."
       "<Search services that ...>"
     database_name: "<database_name>"
     schema_name: "<schema_name>"
+    columns: [] # Optional: List of columns to return for each relevant result (default: [])
+    limit: 10 # Optional: Limit on the number of results to return (default: 10)
 analyst_services: # List all Cortex Analyst semantic models/views
   - service_name: "<service_name>" # Create descriptive name for the service
     semantic_model: "<semantic_yaml_or_view>" # Fully-qualify semantic YAML model or Semantic View

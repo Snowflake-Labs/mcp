@@ -47,6 +47,30 @@ def valid_config_yaml(tmp_path):
 
 
 @pytest.fixture
+def config_with_optional_fields(tmp_path):
+    config = {}
+    config.update(
+        {
+            "search_services": [
+                {
+                    "service_name": "test_search_with_options",
+                    "description": "Search service that finds test data with custom options",
+                    "database_name": "TEST_DB",
+                    "schema_name": "TEST_SCHEMA",
+                    "columns": ["col1", "col2", "col3"],
+                    "limit": 25,
+                }
+            ],
+        }
+    )
+
+    config_file = tmp_path / "test_optional_fields_config.yaml"
+    with open(config_file, "w") as f:
+        yaml.dump(config, f)
+    return config_file
+
+
+@pytest.fixture
 def missing_required_fields(tmp_path):
     config = {}
     config.update(
@@ -85,6 +109,23 @@ def test_valid_config_loads_successfully(valid_config_yaml):
     analyst_service = service.analyst_services[0]
     assert analyst_service["service_name"] == "test_analyst"
     assert analyst_service["semantic_model"] == "test_model.yaml"
+
+
+def test_optional_fields_loaded_correctly(config_with_optional_fields):
+    """Test that optional columns and limit fields are loaded correctly"""
+    service = SnowflakeService(
+        account_identifier="",
+        username="",
+        pat="",
+        service_config_file=str(config_with_optional_fields),
+        transport="",
+    )
+
+    assert len(service.search_services) == 1
+    search_service = service.search_services[0]
+    assert search_service["service_name"] == "test_search_with_options"
+    assert search_service["columns"] == ["col1", "col2", "col3"]
+    assert search_service["limit"] == 25
 
 
 def test_missing_fields_handled_gracefully(missing_required_fields):
