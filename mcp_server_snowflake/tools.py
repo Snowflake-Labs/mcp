@@ -31,6 +31,7 @@ async def query_cortex_search(
     PAT: str,
     columns: Optional[list[str]] = None,
     filter_query: Optional[dict] = {},
+    limit: Optional[int] = 10,
 ) -> dict:
     """
     Query a Cortex Search Service using the REST API.
@@ -88,6 +89,7 @@ async def query_cortex_search(
     payload = {
         "query": query,
         "filter": filter_query,
+        "limit": limit,
     }
 
     if isinstance(columns, list) and len(columns) > 0:
@@ -119,6 +121,9 @@ def create_search_wrapper(**kwargs):
         filter_query: Annotated[
             dict, Field(description=prompts.cortex_search_filter_description)
         ] = {},
+        limit: Annotated[
+            int, Field(description="Optional limit on the number of results to return")
+        ] = 10,
     ):
         """
         Search using Cortex Search Service.
@@ -156,6 +161,7 @@ def create_search_wrapper(**kwargs):
                 database_name=service_details.get("database_name"),
                 schema_name=service_details.get("schema_name"),
                 PAT=snowflake_service.pat,
+                limit=limit,
             )
 
     return search_wrapper
