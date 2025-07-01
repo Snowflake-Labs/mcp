@@ -9,6 +9,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import os
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -65,6 +68,30 @@ def missing_required_fields(tmp_path):
     return config_file
 
 
+@pytest.fixture
+def temp_config_file():
+    """Create a temporary config file for testing."""
+    config = {
+        "search_services": [
+            {
+                "service_name": "test_search",
+                "description": "Search service for testing path resolution",
+                "database_name": "TEST_DB",
+                "schema_name": "TEST_SCHEMA",
+            }
+        ]
+    }
+
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as tmp:
+        yaml.dump(config, tmp)
+        temp_file = tmp.name
+
+    yield temp_file
+
+    if os.path.exists(temp_file):
+        os.unlink(temp_file)
+
+
 def test_valid_config_loads_successfully(valid_config_yaml):
     """Test that a valid configuration file loads without errors"""
     service = SnowflakeService(
@@ -98,7 +125,6 @@ def test_missing_fields_handled_gracefully(missing_required_fields):
         transport="",
     )
 
-    # Service should load but search service should have missing fields
     assert len(service.search_services) == 1
     search_service = service.search_services[0]
     assert search_service["service_name"] == "test_search"
@@ -114,6 +140,92 @@ def test_config_file_not_found():
             account_identifier="",
             username="",
             pat="",
-            service_config_file=Path("nonexistent_config.yaml"),
+            service_config_file=str(Path("nonexistent_config.yaml")),
             transport="",
+        )
+
+
+@pytest.mark.parametrize(
+    "path_type,path_modifier",
+    [
+        ("absolute", lambda p: p),  # Use path as-is (already absolute)
+        ("relative", lambda p: os.path.relpath(p)),  # Convert to relative path
+    ],
+)
+def test_path_resolution(temp_config_file, path_type, path_modifier):
+    """Test that different path types (absolute, relative) are resolved correctly."""
+    test_path = path_modifier(temp_config_file)
+
+    service = SnowflakeService(
+        account_identifier="test_account",
+        username="test_user",
+        pat="test_pat",
+        service_config_file=test_path,
+        transport="stdio",
+    )
+
+    assert len(service.search_services) == 1
+    assert service.search_services[0]["service_name"] == "test_search"
+
+    assert os.path.isabs(service.service_config_file)
+    assert os.path.exists(service.service_config_file)
+
+
+def test_tilde_path_resolution():
+    """Test that tilde (~) paths are expanded correctly."""
+    home_dir = Path.home()
+    test_config = home_dir / "test_mcp_config.yaml"
+
+    config = {
+        "search_services": [
+            {
+                "service_name": "home_test_search",
+                "description": "Search service for testing tilde expansion",
+                "database_name": "HOME_TEST_DB",
+                "schema_name": "HOME_TEST_SCHEMA",
+            }
+        ]
+    }
+
+    test_config.write_text(yaml.dump(config))
+
+    try:
+        tilde_path = "~/test_mcp_config.yaml"
+
+        service = SnowflakeService(
+            account_identifier="test_account",
+            username="test_user",
+            pat="test_pat",
+            service_config_file=tilde_path,
+            transport="stdio",
+        )
+
+        assert len(service.search_services) == 1
+        assert service.search_services[0]["service_name"] == "home_test_search"
+
+        assert os.path.isabs(service.service_config_file)
+        assert os.path.exists(service.service_config_file)
+        assert service.service_config_file == str(test_config)
+
+    finally:
+        if test_config.exists():
+            test_config.unlink()
+
+
+@pytest.mark.parametrize(
+    "nonexistent_path",
+    [
+        "./nonexistent_config.yaml",
+        "~/nonexistent_config.yaml",
+    ],
+)
+def test_nonexistent_path_raises_error(nonexistent_path):
+    """Test that non-existent paths raise FileNotFoundError."""
+    with pytest.raises(FileNotFoundError):
+        SnowflakeService(
+            account_identifier="test_account",
+            username="test_user",
+            pat="test_pat",
+            service_config_file=nonexistent_path,
+            transport="stdio",
         )

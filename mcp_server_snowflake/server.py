@@ -86,8 +86,8 @@ class SnowflakeService:
         self.account_identifier = account_identifier
         self.username = username
         self.pat = pat
-        self.service_config_file = service_config_file
-        self.config_path_uri = Path(service_config_file).resolve().as_uri()
+        self.service_config_file = str(Path(service_config_file).expanduser().resolve())
+        self.config_path_uri = Path(self.service_config_file).as_uri()
         self.transport: Literal["stdio", "sse", "streamable-http"] = transport
         self.search_services = []
         self.analyst_services = []
