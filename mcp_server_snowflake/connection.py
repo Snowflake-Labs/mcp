@@ -123,7 +123,6 @@ class SnowflakeConnectionManager:
 
             params = {
                 "host": os.getenv("SNOWFLAKE_HOST"),
-                "account": os.getenv("SNOWFLAKE_ACCOUNT", self.account_identifier),
                 "token": self._get_container_token(),
                 "authenticator": "oauth",
             }

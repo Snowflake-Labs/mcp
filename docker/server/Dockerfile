@@ -13,6 +13,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 COPY . /app
 
+COPY services/snowflake_mcp_config.yaml /app/services/custom_config.yaml
+
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
 
