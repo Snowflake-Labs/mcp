@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: docker/server/Dockerfile
+      platforms:
+        - linux/amd64
+    image: ${SNOWFLAKE_ACCOUNT}.registry.snowflakecomputing.com/cube_testing/public/awesome_images/mcp-server:latest
     container_name: mcp-server-snowflake
     environment:
       - SNOWFLAKE_PAT=${SNOWFLAKE_PAT}
@@ -17,9 +20,10 @@ services:
     build:
       context: .
       dockerfile: docker/notebook/Dockerfile
+      platforms:
+        - linux/amd64
+    image: ${SNOWFLAKE_ACCOUNT}.registry.snowflakecomputing.com/cube_testing/public/awesome_images/marimo-notebook:latest
     container_name: marimo-notebook
-    volumes:
-      - ${HOME}/.snowflake/config.toml:/root/.snowflake/config.toml:ro
     ports:
       - "2718:2718"
     restart: unless-stopped
