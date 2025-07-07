@@ -11,16 +11,12 @@
 # limitations under the License.
 import json
 import logging
-import os
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, Optional, Tuple
 
 from snowflake.connector import DictCursor, connect
 
-from mcp_server_snowflake.environment import (
-    get_container_token,
-    is_running_in_container,
-)
+from mcp_server_snowflake.auth import SnowflakeAuthManager
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +32,8 @@ class SnowflakeConnectionManager:
 
     Attributes
     ----------
-    account_identifier : str
-        Snowflake account identifier
-    username : str
-        Snowflake username for authentication (not used in SPCS environment)
-    pat : str
-        Programmatic Access Token for authentication (not used in SPCS environment)
+    auth_manager : SnowflakeAuthManager
+        Authentication manager for handling credentials
     default_session_parameters : dict
         Default session parameters to apply to all connections
     """
@@ -58,18 +50,20 @@ class SnowflakeConnectionManager:
 
         Parameters
         ----------
-        account_identifier : str, optional
-            Snowflake account identifier (auto-detected in container environment)
-        username : str, optional
+        account_identifier : str
+            Snowflake account identifier
+        username : str
             Snowflake username for authentication (not used in container environment)
-        pat : str, optional
+        pat : str
             Programmatic Access Token for authentication (not used in container environment)
         default_session_parameters : dict, optional
             Default session parameters to apply to all connections
         """
-        self.account_identifier = account_identifier
-        self.username = username
-        self.pat = pat
+        self.auth_manager = SnowflakeAuthManager(
+            account_identifier=account_identifier,
+            username=username,
+            pat=pat,
+        )
         self.default_session_parameters = default_session_parameters or {}
 
     def _get_connection_params(self, **kwargs: Any) -> Dict[str, Any]:
@@ -86,38 +80,7 @@ class SnowflakeConnectionManager:
         dict
             Connection parameters for snowflake.connector.connect()
         """
-        if is_running_in_container():
-            logger.info(
-                "Detected Snowflake container environment, using OAuth authentication"
-            )
-
-            params = {
-                "host": os.getenv("SNOWFLAKE_HOST"),
-                "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-                "token": get_container_token(),
-                "authenticator": "oauth",
-            }
-
-            params = {k: v for k, v in params.items() if v is not None}
-
-        else:
-            logger.info("Using external authentication with PAT")
-
-            if not all([self.account_identifier, self.username, self.pat]):
-                raise ValueError(
-                    "When running outside a Snowflake container, "
-                    "account_identifier, username, and pat are required"
-                )
-
-            params = {
-                "account": self.account_identifier,
-                "user": self.username,
-                "password": self.pat,
-            }
-
-        params.update(kwargs)
-
-        return params
+        return self.auth_manager.get_connection_params(**kwargs)
 
     def set_query_tag(self, query_tag: dict) -> None:
         """

@@ -119,11 +119,11 @@ def temp_config_file():
 def test_valid_config_loads_successfully(valid_config_yaml):
     """Test that a valid configuration file loads without errors"""
     service = SnowflakeService(
-        account_identifier="",
-        username="",
-        pat="",
+        account_identifier="test_account",
+        username="test_user",
+        pat="test_pat",
         service_config_file=str(valid_config_yaml),
-        transport="",
+        transport="stdio",
     )
     assert len(service.search_services) == 1
     assert len(service.analyst_services) == 1
@@ -141,11 +141,11 @@ def test_valid_config_loads_successfully(valid_config_yaml):
 def test_optional_fields_loaded_correctly(config_with_optional_fields):
     """Test that optional columns and limit fields are loaded correctly"""
     service = SnowflakeService(
-        account_identifier="",
-        username="",
-        pat="",
+        account_identifier="test_account",
+        username="test_user",
+        pat="test_pat",
         service_config_file=str(config_with_optional_fields),
-        transport="",
+        transport="stdio",
     )
 
     assert len(service.search_services) == 1
@@ -159,11 +159,11 @@ def test_missing_fields_handled_gracefully(missing_required_fields):
     """Test that missing required fields are handled gracefully by returning None values"""
 
     service = SnowflakeService(
-        account_identifier="",
-        username="",
-        pat="",
+        account_identifier="test_account",
+        username="test_user",
+        pat="test_pat",
         service_config_file=str(missing_required_fields),
-        transport="",
+        transport="stdio",
     )
 
     assert len(service.search_services) == 1
@@ -178,11 +178,11 @@ def test_config_file_not_found():
     """Test that non-existent config file raises FileNotFoundError"""
     with pytest.raises(FileNotFoundError):
         SnowflakeService(
-            account_identifier="",
-            username="",
-            pat="",
+            account_identifier="test_account",
+            username="test_user",
+            pat="test_pat",
             service_config_file=str(Path("nonexistent_config.yaml")),
-            transport="",
+            transport="stdio",
         )
 
 

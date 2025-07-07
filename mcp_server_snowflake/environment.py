@@ -10,7 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import os
 from pathlib import Path
 from urllib.parse import urljoin
 
@@ -30,16 +29,14 @@ def is_running_in_container() -> bool:
     return token_path.exists() and token_path.is_file()
 
 
-def construct_snowflake_post(
-    account_identifier: str, api_path: str, **kwargs
-) -> tuple[str, dict[str, str]]:
+def construct_snowflake_post(auth_manager, api_path: str) -> tuple[str, dict[str, str]]:
     """
     Construct a Snowflake API URL based on the environment (container vs external).
 
     Parameters
     ----------
-    account_identifier : str
-        Snowflake account identifier (used when running externally)
+    auth_manager : SnowflakeAuthManager
+        Authentication manager instance
     api_path : str
         The API path to append to the base URL (e.g., "/api/v2/cortex/analyst/message")
 
@@ -51,28 +48,15 @@ def construct_snowflake_post(
     Examples
     --------
     >>> # External environment
-    >>> construct_snowflake_api_url("myaccount", "/api/v2/cortex/analyst/message")
-    'https://myaccount.snowflakecomputing.com/api/v2/cortex/analyst/message'
+    >>> construct_snowflake_post(auth_manager, "/api/v2/cortex/analyst/message")
+    ('https://myaccount.snowflakecomputing.com/api/v2/cortex/analyst/message', {...})
 
     >>> # Container environment (with SNOWFLAKE_HOST set)
-    >>> construct_snowflake_api_url("myaccount", "/api/v2/cortex/analyst/message")
-    'https://some-host.snowflakecomputing.com/api/v2/cortex/analyst/message'
+    >>> construct_snowflake_post(auth_manager, "/api/v2/cortex/analyst/message")
+    ('https://some-host.snowflakecomputing.com/api/v2/cortex/analyst/message', {...})
     """
-    if is_running_in_container():
-        host = os.getenv("SNOWFLAKE_HOST", account_identifier)
-        headers = {
-            "Authorization": f"Bearer {get_container_token()}",
-            "Content-Type": "application/json",
-            "Accept": "application/json, text/event-stream",
-        }
-    else:
-        host = account_identifier
-        headers = {
-            "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
-            "Authorization": f"Bearer {kwargs.get('PAT')}",
-            "Content-Type": "application/json",
-            "Accept": "application/json, text/event-stream",
-        }
+    host = auth_manager.get_api_host()
+    headers = auth_manager.get_api_headers()
 
     base_url = f"https://{host}"
     return urljoin(base_url, api_path.lstrip("/")), headers

@@ -21,6 +21,7 @@ from fastmcp import FastMCP
 from fastmcp.tools import Tool
 
 import mcp_server_snowflake.tools as tools
+from mcp_server_snowflake.auth import SnowflakeAuthManager
 from mcp_server_snowflake.connection import SnowflakeConnectionManager
 from mcp_server_snowflake.utils import (
     MissingArgumentsException,
@@ -93,6 +94,9 @@ class SnowflakeService:
         self.analyst_services = []
         self.agent_services = []
 
+        self.auth_manager = SnowflakeAuthManager(
+            account_identifier=account_identifier, username=username, pat=pat
+        )
         self.connection_manager = SnowflakeConnectionManager(
             account_identifier=account_identifier, username=username, pat=pat
         )

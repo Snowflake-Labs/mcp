@@ -37,9 +37,12 @@ def connection_manager(connection_params):
 def test_init(connection_params):
     manager = SnowflakeConnectionManager(**connection_params)
 
-    assert manager.account_identifier == connection_params["account_identifier"]
-    assert manager.username == connection_params["username"]
-    assert manager.pat == connection_params["pat"]
+    assert (
+        manager.auth_manager.account_identifier
+        == connection_params["account_identifier"]
+    )
+    assert manager.auth_manager.username == connection_params["username"]
+    assert manager.auth_manager.pat == connection_params["pat"]
     assert (
         manager.default_session_parameters
         == connection_params["default_session_parameters"]
@@ -74,9 +77,9 @@ def test_get_connection(mock_connect, connection_manager):
         assert cur == mock_cursor
 
     mock_connect.assert_called_with(
-        account=connection_manager.account_identifier,
-        user=connection_manager.username,
-        password=connection_manager.pat,
+        account=connection_manager.auth_manager.account_identifier,
+        user=connection_manager.auth_manager.username,
+        password=connection_manager.auth_manager.pat,
         session_parameters=connection_manager.default_session_parameters,
     )
 
@@ -93,9 +96,9 @@ def test_get_connection(mock_connect, connection_manager):
         expected_session_params = connection_manager.default_session_parameters.copy()
         expected_session_params.update(additional_params.pop("session_parameters"))
         mock_connect.assert_called_with(
-            account=connection_manager.account_identifier,
-            user=connection_manager.username,
-            password=connection_manager.pat,
+            account=connection_manager.auth_manager.account_identifier,
+            user=connection_manager.auth_manager.username,
+            password=connection_manager.auth_manager.pat,
             session_parameters=expected_session_params,
             **additional_params,
         )

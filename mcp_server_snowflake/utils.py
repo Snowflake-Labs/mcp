@@ -231,11 +231,15 @@ class SnowflakeResponse:
             @wraps(func)
             async def response_parsers(*args: P.args, **kwargs: P.kwargs) -> R:
                 raw_sse = await func(*args, **kwargs)
-                conn_kwargs = dict(
-                    account=kwargs.get("account_identifier", ""),
-                    user=kwargs.get("username", ""),
-                    password=kwargs.get("PAT", ""),
-                )
+                auth_manager = kwargs.get("auth_manager")
+                if auth_manager:
+                    conn_kwargs = auth_manager.get_connection_params()
+                else:
+                    conn_kwargs = dict(
+                        account=kwargs.get("account_identifier", ""),
+                        user=kwargs.get("username", ""),
+                        password=kwargs.get("PAT", ""),
+                    )
                 match api:
                     case "analyst":
                         parsed = self.parse_analyst_response(
