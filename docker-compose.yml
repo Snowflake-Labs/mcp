@@ -1,13 +1,25 @@
 services:
   mcp-server-snowflake:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/server/Dockerfile
     container_name: mcp-server-snowflake
     environment:
       - SNOWFLAKE_PAT=${SNOWFLAKE_PAT}
       - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
       - SNOWFLAKE_USER=${SNOWFLAKE_USER}
     volumes:
-      - ${HOME}/.mcp/snowflake_mcp_config.yaml:/app/services/custom_config.yaml
+      - ${HOME}/.mcp/snowflake_mcp_config.yaml:/app/services/custom_config.yaml:ro
     ports:
       - "9000:9000"
+    restart: unless-stopped
+  marimo-notebook:
+    build:
+      context: .
+      dockerfile: docker/notebook/Dockerfile
+    container_name: marimo-notebook
+    volumes:
+      - ${HOME}/.snowflake/config.toml:/root/.snowflake/config.toml:ro
+    ports:
+      - "2718:2718"
     restart: unless-stopped
