@@ -13,12 +13,14 @@ import json
 import logging
 import os
 from contextlib import contextmanager
-from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Tuple
 
 from snowflake.connector import DictCursor, connect
 
-from mcp_server_snowflake.environment import is_running_in_container
+from mcp_server_snowflake.environment import (
+    get_container_token,
+    is_running_in_container,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,28 +72,6 @@ class SnowflakeConnectionManager:
         self.pat = pat
         self.default_session_parameters = default_session_parameters or {}
 
-    def _get_container_token(self) -> str:
-        """
-        Read the OAuth token from the container environment.
-
-        Returns
-        -------
-        str
-            The OAuth token for container authentication
-
-        Raises
-        ------
-        FileNotFoundError
-            If the token file is not found
-        """
-        token_path = Path("/snowflake/session/token")
-        try:
-            with open(token_path, "r") as f:
-                return f.read().strip()
-        except Exception as e:
-            logger.error(f"Error reading container token: {e}")
-            raise
-
     def _get_connection_params(self, **kwargs: Any) -> Dict[str, Any]:
         """
         Get connection parameters based on the environment (container vs external).
@@ -113,7 +93,8 @@ class SnowflakeConnectionManager:
 
             params = {
                 "host": os.getenv("SNOWFLAKE_HOST"),
-                "token": self._get_container_token(),
+                "account": os.getenv("SNOWFLAKE_ACCOUNT"),
+                "token": get_container_token(),
                 "authenticator": "oauth",
             }
 

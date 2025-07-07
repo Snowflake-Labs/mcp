@@ -15,7 +15,7 @@ import requests
 from pydantic import Field
 
 import mcp_server_snowflake.prompts as prompts
-from mcp_server_snowflake.environment import construct_snowflake_api_url
+from mcp_server_snowflake.environment import construct_snowflake_post
 from mcp_server_snowflake.utils import SnowflakeException, SnowflakeResponse
 
 sfse = SnowflakeResponse()  # For parsing Snowflake responses
@@ -77,17 +77,11 @@ async def query_cortex_search(
     Snowflake Cortex Search REST API:
     https://docs.snowflake.com/developer-guide/snowflake-rest-api/reference/cortex-search-service
     """
-    base_url = construct_snowflake_api_url(
+    host, headers = construct_snowflake_post(
         account_identifier=account_identifier,
         api_path=f"/api/v2/databases/{database_name}/schemas/{schema_name}/cortex-search-services/{service_name}:query",
+        PAT=PAT,
     )
-
-    headers = {
-        "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
-        "Authorization": f"Bearer {PAT}",
-        "Content-Type": "application/json",
-        "Accept": "application/json, text/event-stream",
-    }
 
     if filter_query is None:
         filter_query = {}
@@ -101,7 +95,7 @@ async def query_cortex_search(
     if isinstance(columns, list) and len(columns) > 0:
         payload["columns"] = columns
 
-    response = requests.post(base_url, headers=headers, json=payload)
+    response = requests.post(host, headers=headers, json=payload)
 
     if response.status_code == 200:
         return response
@@ -225,16 +219,11 @@ async def query_cortex_analyst(
     refers to a YAML file (starts with @ and ends with .yaml) or a semantic view.
     Currently configured for non-streaming responses.
     """
-    base_url = construct_snowflake_api_url(
-        account_identifier=account_identifier, api_path="/api/v2/cortex/analyst/message"
+    host, headers = construct_snowflake_post(
+        account_identifier=account_identifier,
+        api_path="/api/v2/cortex/analyst/message",
+        PAT=PAT,
     )
-
-    headers = {
-        "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
-        "Authorization": f"Bearer {PAT}",
-        "Content-Type": "application/json",
-        "Accept": "application/json, text/event-stream",
-    }
 
     if semantic_model.startswith("@") and semantic_model.endswith(".yaml"):
         semantic_type = "semantic_model_file"
@@ -257,7 +246,7 @@ async def query_cortex_analyst(
         "stream": False,
     }
 
-    response = requests.post(base_url, headers=headers, json=payload)
+    response = requests.post(host, headers=headers, json=payload)
 
     if response.status_code == 200:
         return response

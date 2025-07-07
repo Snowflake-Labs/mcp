@@ -30,7 +30,9 @@ def is_running_in_container() -> bool:
     return token_path.exists() and token_path.is_file()
 
 
-def construct_snowflake_api_url(account_identifier: str, api_path: str) -> str:
+def construct_snowflake_post(
+    account_identifier: str, api_path: str, **kwargs
+) -> tuple[str, dict[str, str]]:
     """
     Construct a Snowflake API URL based on the environment (container vs external).
 
@@ -43,8 +45,8 @@ def construct_snowflake_api_url(account_identifier: str, api_path: str) -> str:
 
     Returns
     -------
-    str
-        Complete API URL for the Snowflake service
+    tuple[str, dict[str, str]]
+        Complete API URL for the Snowflake service and headers
 
     Examples
     --------
@@ -58,8 +60,42 @@ def construct_snowflake_api_url(account_identifier: str, api_path: str) -> str:
     """
     if is_running_in_container():
         host = os.getenv("SNOWFLAKE_HOST", account_identifier)
+        headers = {
+            "Authorization": f"Bearer {get_container_token()}",
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
     else:
         host = account_identifier
+        headers = {
+            "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
+            "Authorization": f"Bearer {kwargs.get('PAT')}",
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
 
     base_url = f"https://{host}"
-    return urljoin(base_url, api_path.lstrip("/"))
+    return urljoin(base_url, api_path.lstrip("/")), headers
+
+
+def get_container_token() -> str:
+    """
+    Read the OAuth token from the container environment.
+
+    Returns
+    -------
+    str
+        The OAuth token for container authentication
+
+    Raises
+    ------
+    FileNotFoundError
+        If the token file is not found
+    """
+    token_path = Path("/snowflake/session/token")
+    try:
+        with open(token_path, "r") as f:
+            return f.read().strip()
+    except Exception as e:
+        logger.error(f"Error reading container token: {e}")
+        raise
