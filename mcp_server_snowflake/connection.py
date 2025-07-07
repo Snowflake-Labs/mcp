@@ -18,6 +18,8 @@ from typing import Any, Dict, Generator, Optional, Tuple
 
 from snowflake.connector import DictCursor, connect
 
+from mcp_server_snowflake.environment import is_running_in_container
+
 logger = logging.getLogger(__name__)
 
 
@@ -68,18 +70,6 @@ class SnowflakeConnectionManager:
         self.pat = pat
         self.default_session_parameters = default_session_parameters or {}
 
-    def _is_running_in_container(self) -> bool:
-        """
-        Check if the application is running inside a Snowflake container.
-
-        Returns
-        -------
-        bool
-            True if running in a Snowflake container, False otherwise
-        """
-        token_path = Path("/snowflake/session/token")
-        return token_path.exists() and token_path.is_file()
-
     def _get_container_token(self) -> str:
         """
         Read the OAuth token from the container environment.
@@ -116,7 +106,7 @@ class SnowflakeConnectionManager:
         dict
             Connection parameters for snowflake.connector.connect()
         """
-        if self._is_running_in_container():
+        if is_running_in_container():
             logger.info(
                 "Detected Snowflake container environment, using OAuth authentication"
             )

@@ -15,6 +15,7 @@ import requests
 from pydantic import Field
 
 import mcp_server_snowflake.prompts as prompts
+from mcp_server_snowflake.environment import construct_snowflake_api_url
 from mcp_server_snowflake.utils import SnowflakeException, SnowflakeResponse
 
 sfse = SnowflakeResponse()  # For parsing Snowflake responses
@@ -76,7 +77,10 @@ async def query_cortex_search(
     Snowflake Cortex Search REST API:
     https://docs.snowflake.com/developer-guide/snowflake-rest-api/reference/cortex-search-service
     """
-    base_url = f"https://{account_identifier}.snowflakecomputing.com/api/v2/databases/{database_name}/schemas/{schema_name}/cortex-search-services/{service_name}:query"
+    base_url = construct_snowflake_api_url(
+        account_identifier=account_identifier,
+        api_path=f"/api/v2/databases/{database_name}/schemas/{schema_name}/cortex-search-services/{service_name}:query",
+    )
 
     headers = {
         "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
@@ -221,7 +225,9 @@ async def query_cortex_analyst(
     refers to a YAML file (starts with @ and ends with .yaml) or a semantic view.
     Currently configured for non-streaming responses.
     """
-    base_url = f"https://{account_identifier}.snowflakecomputing.com/api/v2/cortex/analyst/message"
+    base_url = construct_snowflake_api_url(
+        account_identifier=account_identifier, api_path="/api/v2/cortex/analyst/message"
+    )
 
     headers = {
         "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
