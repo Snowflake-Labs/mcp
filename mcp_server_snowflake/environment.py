@@ -61,5 +61,5 @@ def construct_snowflake_api_url(account_identifier: str, api_path: str) -> str:
     else:
         host = account_identifier
 
-    base_url = f"https://{host}.snowflakecomputing.com"
+    base_url = f"https://{host}"
     return urljoin(base_url, api_path.lstrip("/"))
