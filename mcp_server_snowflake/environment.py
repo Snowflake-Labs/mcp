@@ -58,8 +58,8 @@ def construct_snowflake_post(auth_manager, api_path: str) -> tuple[str, dict[str
     host = auth_manager.get_api_host()
     headers = auth_manager.get_api_headers()
 
-    base_url = f"https://{host}"
-    return urljoin(base_url, api_path.lstrip("/")), headers
+    base_url = f"https://{host}.snowflakecomputing.com"
+    return urljoin(base_url, api_path), headers
 
 
 def get_spcs_container_token() -> str:
