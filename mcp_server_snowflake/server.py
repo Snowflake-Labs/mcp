@@ -33,8 +33,8 @@ from mcp_server_snowflake.utils import (
 )
 
 server_name = "mcp-server-snowflake"
-tag_major_version = 1
-tag_minor_version = 1
+tag_major_version = 0
+tag_minor_version = 3
 
 logger = logging.getLogger(server_name)
 
