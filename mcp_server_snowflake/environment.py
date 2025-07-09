@@ -16,14 +16,14 @@ from urllib.parse import urljoin
 logger = logging.getLogger(__name__)
 
 
-def is_running_in_container() -> bool:
+def is_running_in_spcs_container() -> bool:
     """
-    Check if the application is running inside a Snowflake container.
+    Check if the application is running inside a Snowflake SPCS (Snowpark Container Services) container.
 
     Returns
     -------
     bool
-        True if running in a Snowflake container, False otherwise
+        True if running in a Snowflake SPCS container, False otherwise
     """
     token_path = Path("/snowflake/session/token")
     return token_path.exists() and token_path.is_file()
@@ -31,7 +31,7 @@ def is_running_in_container() -> bool:
 
 def construct_snowflake_post(auth_manager, api_path: str) -> tuple[str, dict[str, str]]:
     """
-    Construct a Snowflake API URL based on the environment (container vs external).
+    Construct a Snowflake API URL based on the environment (SPCS container vs external).
 
     Parameters
     ----------
@@ -51,7 +51,7 @@ def construct_snowflake_post(auth_manager, api_path: str) -> tuple[str, dict[str
     >>> construct_snowflake_post(auth_manager, "/api/v2/cortex/analyst/message")
     ('https://myaccount.snowflakecomputing.com/api/v2/cortex/analyst/message', {...})
 
-    >>> # Container environment (with SNOWFLAKE_HOST set)
+    >>> # SPCS container environment (with SNOWFLAKE_HOST set)
     >>> construct_snowflake_post(auth_manager, "/api/v2/cortex/analyst/message")
     ('https://some-host.snowflakecomputing.com/api/v2/cortex/analyst/message', {...})
     """
@@ -62,14 +62,14 @@ def construct_snowflake_post(auth_manager, api_path: str) -> tuple[str, dict[str
     return urljoin(base_url, api_path.lstrip("/")), headers
 
 
-def get_container_token() -> str:
+def get_spcs_container_token() -> str:
     """
-    Read the OAuth token from the container environment.
+    Read the OAuth token from the SPCS container environment.
 
     Returns
     -------
     str
-        The OAuth token for container authentication
+        The OAuth token for SPCS container authentication
 
     Raises
     ------

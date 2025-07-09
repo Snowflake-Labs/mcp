@@ -14,8 +14,8 @@ import os
 from typing import Dict, Optional
 
 from mcp_server_snowflake.environment import (
-    get_container_token,
-    is_running_in_container,
+    get_spcs_container_token,
+    is_running_in_spcs_container,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,13 +51,13 @@ class SnowflakeAuthManager:
         self.account_identifier = account_identifier
         self.username = username
         self.pat = pat
-        self._is_container = is_running_in_container()
+        self._is_spcs_container = is_running_in_spcs_container()
 
         # Validate required parameters for external environment
-        if not self._is_container:
+        if not self._is_spcs_container:
             if not all([account_identifier, username, pat]):
                 raise ValueError(
-                    "When running outside a Snowflake container, "
+                    "When running outside a Snowflake SPCS container, "
                     "account_identifier, username, and pat are required"
                 )
 
@@ -75,12 +75,12 @@ class SnowflakeAuthManager:
         Dict[str, str]
             Connection parameters
         """
-        if self._is_container:
-            logger.info("Using container OAuth authentication")
+        if self._is_spcs_container:
+            logger.info("Using SPCS container OAuth authentication")
             params = {
                 "host": os.getenv("SNOWFLAKE_HOST"),
                 "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-                "token": get_container_token(),
+                "token": get_spcs_container_token(),
                 "authenticator": "oauth",
             }
             params = {k: v for k, v in params.items() if v is not None}
@@ -104,9 +104,9 @@ class SnowflakeAuthManager:
         Dict[str, str]
             HTTP headers with authentication
         """
-        if self._is_container:
+        if self._is_spcs_container:
             return {
-                "Authorization": f"Bearer {get_container_token()}",
+                "Authorization": f"Bearer {get_spcs_container_token()}",
                 "Content-Type": "application/json",
                 "Accept": "application/json, text/event-stream",
             }
@@ -127,12 +127,12 @@ class SnowflakeAuthManager:
         str
             API host URL
         """
-        if self._is_container:
+        if self._is_spcs_container:
             return os.getenv("SNOWFLAKE_HOST", self.account_identifier)
         else:
             return self.account_identifier
 
     @property
-    def is_container_environment(self) -> bool:
-        """Check if running in container environment."""
-        return self._is_container
+    def is_spcs_container_environment(self) -> bool:
+        """Check if running in SPCS container environment."""
+        return self._is_spcs_container
