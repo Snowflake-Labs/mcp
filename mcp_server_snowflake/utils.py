@@ -19,8 +19,6 @@ import yaml
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-from mcp_server_snowflake.connection import SnowflakeConnectionManager
-
 P = ParamSpec("P")
 R = TypeVar("R")
 
@@ -97,7 +95,7 @@ class SnowflakeResponse:
         Decorator factory for response parsing
     """
 
-    def fetch_results(self, statement: str, **kwargs):
+    def fetch_results(self, statement: str, service, **kwargs):
         """
         Execute SQL statement and fetch all results using Snowflake connector.
 
@@ -108,9 +106,10 @@ class SnowflakeResponse:
         ----------
         statement : str
             SQL statement to execute
+        service : SnowflakeService
+            The Snowflake service instance to use for connection
         **kwargs
-            Connection parameters including account, user, password, and any additional
-            connection parameters (e.g., role, warehouse)
+            Additional connection parameters (e.g., role, warehouse)
 
         Returns
         -------
@@ -122,16 +121,8 @@ class SnowflakeResponse:
         snowflake.connector.errors.Error
             If connection fails or SQL execution encounters an error
         """
-        required_params = {
-            "account_identifier": kwargs.pop("account"),
-            "username": kwargs.pop("user"),
-            "pat": kwargs.pop("password"),
-        }
-
-        connection_manager = SnowflakeConnectionManager(**required_params)
-
         # Forward any remaining kwargs to get_connection
-        with connection_manager.get_connection(use_dict_cursor=True, **kwargs) as (
+        with service.get_connection(use_dict_cursor=True, **kwargs) as (
             con,
             cur,
         ):
@@ -139,7 +130,7 @@ class SnowflakeResponse:
             return cur.fetchall()
 
     def parse_analyst_response(
-        self, response: requests.Response | dict, **kwargs
+        self, response: requests.Response | dict, service, **kwargs
     ) -> str:
         """
         Parse Cortex Analyst API response and execute any generated SQL.
@@ -152,8 +143,10 @@ class SnowflakeResponse:
         ----------
         response : requests.Response | dict
             Raw response from Cortex Analyst API
+        service : SnowflakeService
+            The Snowflake service instance to use for connection
         **kwargs
-            Connection parameters for SQL execution (account, user, password)
+            Additional connection parameters for SQL execution
 
         Returns
         -------
@@ -169,7 +162,9 @@ class SnowflakeResponse:
             elif item.get("type") == "sql":
                 res["sql"] = item.get("statement", "")
                 if item.get("statement"):
-                    res["results"] = self.fetch_results(statement=res["sql"], **kwargs)
+                    res["results"] = self.fetch_results(
+                        statement=res["sql"], service=service, **kwargs
+                    )
         response = AnalystResponse(**res)
         return response.model_dump_json()
 
@@ -232,18 +227,10 @@ class SnowflakeResponse:
             async def response_parsers(*args: P.args, **kwargs: P.kwargs) -> R:
                 raw_sse = await func(*args, **kwargs)
                 auth_manager = kwargs.get("auth_manager")
-                if auth_manager:
-                    conn_kwargs = auth_manager.get_connection_params()
-                else:
-                    conn_kwargs = dict(
-                        account=kwargs.get("account_identifier", ""),
-                        user=kwargs.get("username", ""),
-                        password=kwargs.get("PAT", ""),
-                    )
                 match api:
                     case "analyst":
                         parsed = self.parse_analyst_response(
-                            response=raw_sse, **conn_kwargs
+                            response=raw_sse, service=auth_manager
                         )
                     case "search":
                         parsed = self.parse_search_response(response=raw_sse)

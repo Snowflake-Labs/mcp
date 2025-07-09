@@ -13,16 +13,20 @@ import argparse
 import json
 import logging
 import os
+from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Dict, Generator, Literal, Optional, Tuple, cast
 
 import yaml
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
+from snowflake.connector import DictCursor, connect
 
 import mcp_server_snowflake.tools as tools
-from mcp_server_snowflake.auth import SnowflakeAuthManager
-from mcp_server_snowflake.connection import SnowflakeConnectionManager
+from mcp_server_snowflake.environment import (
+    get_spcs_container_token,
+    is_running_in_spcs_container,
+)
 from mcp_server_snowflake.utils import (
     MissingArgumentsException,
     load_tools_config_resource,
@@ -42,6 +46,11 @@ class SnowflakeService:
     This class handles the configuration and setup of Snowflake Cortex services
     including search, and analyst. It loads service specifications from a
     YAML configuration file and provides access to service parameters.
+
+    It also handles all Snowflake authentication and connection logic,
+    automatically detecting the environment (container vs external) and
+    providing appropriate authentication parameters for both database
+    connections and REST API calls.
 
     Parameters
     ----------
@@ -66,7 +75,7 @@ class SnowflakeService:
         Programmatic Access Token
     service_config_file : str
         Path to configuration file
-    transport : str
+    transport : Literal["stdio", "sse", "streamable-http"]
         Transport for the MCP server
     search_services : list
         List of configured search service specifications
@@ -74,6 +83,8 @@ class SnowflakeService:
         List of configured analyst service specifications
     agent_services : list
         List of configured agent service specifications
+    default_session_parameters : dict
+        Default session parameters to apply to all connections
     """
 
     def __init__(
@@ -89,17 +100,22 @@ class SnowflakeService:
         self.pat = pat
         self.service_config_file = str(Path(service_config_file).expanduser().resolve())
         self.config_path_uri = Path(self.service_config_file).as_uri()
-        self.transport: Literal["stdio", "sse", "streamable-http"] = transport
+        self.transport = cast(Literal["stdio", "sse", "streamable-http"], transport)
         self.search_services = []
         self.analyst_services = []
         self.agent_services = []
+        self.default_session_parameters: Dict[str, Any] = {}
 
-        self.auth_manager = SnowflakeAuthManager(
-            account_identifier=account_identifier, username=username, pat=pat
-        )
-        self.connection_manager = SnowflakeConnectionManager(
-            account_identifier=account_identifier, username=username, pat=pat
-        )
+        # Environment detection for authentication
+        self._is_spcs_container = is_running_in_spcs_container()
+
+        # Validate required parameters for external environment
+        if not self._is_spcs_container:
+            if not all([account_identifier, username, pat]):
+                raise ValueError(
+                    "When running outside a Snowflake SPCS container, "
+                    "account_identifier, username, and pat are required"
+                )
 
         self.unpack_service_specs()
         self.set_query_tag(
@@ -115,7 +131,6 @@ class SnowflakeService:
         completion model.
         """
         try:
-            # Load the service configuration from a YAML file
             with open(self.service_config_file, "r") as file:
                 service_config = yaml.safe_load(file)
         except FileNotFoundError:
@@ -130,7 +145,6 @@ class SnowflakeService:
             logger.error(f"Unexpected error loading service config: {e}")
             raise
 
-        # Extract the service specifications
         try:
             self.search_services = service_config.get("search_services", [])
             self.analyst_services = service_config.get("analyst_services", [])
@@ -139,6 +153,145 @@ class SnowflakeService:
             )  # Not supported yet
         except Exception as e:
             logger.error(f"Error extracting service specifications: {e}")
+            raise
+
+    def get_connection_params(self, **kwargs) -> Dict[str, Any]:
+        """
+        Get connection parameters for snowflake.connector.connect().
+
+        Parameters
+        ----------
+        **kwargs
+            Additional connection parameters
+
+        Returns
+        -------
+        Dict[str, Any]
+            Connection parameters
+        """
+        if self._is_spcs_container:
+            logger.info("Using SPCS container OAuth authentication")
+            params = {
+                "host": os.getenv("SNOWFLAKE_HOST"),
+                "account": os.getenv("SNOWFLAKE_ACCOUNT"),
+                "token": get_spcs_container_token(),
+                "authenticator": "oauth",
+            }
+            params = {k: v for k, v in params.items() if v is not None}
+        else:
+            logger.info("Using external PAT authentication")
+            params = {
+                "account": self.account_identifier,
+                "user": self.username,
+                "password": self.pat,
+            }
+
+        params.update(kwargs)
+        return params
+
+    def get_api_headers(self) -> Dict[str, str]:
+        """
+        Get authentication headers for REST API calls.
+
+        Returns
+        -------
+        Dict[str, str]
+            HTTP headers with authentication
+        """
+        if self._is_spcs_container:
+            return {
+                "Authorization": f"Bearer {get_spcs_container_token()}",
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/event-stream",
+            }
+        else:
+            return {
+                "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
+                "Authorization": f"Bearer {self.pat}",
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/event-stream",
+            }
+
+    def get_api_host(self) -> str:
+        """
+        Get the API host for REST API calls.
+
+        Returns
+        -------
+        str
+            API host URL
+        """
+        if self._is_spcs_container:
+            return os.getenv("SNOWFLAKE_HOST", self.account_identifier)
+        else:
+            return self.account_identifier
+
+    @property
+    def is_spcs_container_environment(self) -> bool:
+        """Check if running in SPCS container environment."""
+        return self._is_spcs_container
+
+    @contextmanager
+    def get_connection(
+        self,
+        session_parameters: Optional[Dict[str, Any]] = None,
+        use_dict_cursor: bool = False,
+        **kwargs: Any,
+    ) -> Generator[Tuple[Any, Any], None, None]:
+        """
+        Get a Snowflake connection with the specified configuration.
+
+        This context manager ensures proper connection handling and cleanup.
+        It automatically detects the environment and uses appropriate authentication.
+
+        Parameters
+        ----------
+        session_parameters : dict, optional
+            Additional session parameters to merge with defaults
+        use_dict_cursor : bool, default=False
+            Whether to use DictCursor instead of regular cursor
+        **kwargs : Any
+            Additional connection parameters (e.g., role, warehouse) to pass to connect()
+
+        Yields
+        ------
+        tuple
+            A tuple containing (connection, cursor)
+
+        Examples
+        --------
+        >>> with service.get_connection(
+        ...     role="ANALYST", warehouse="COMPUTE_WH", use_dict_cursor=True
+        ... ) as (con, cur):
+        ...     cur.execute("SELECT current_version()")
+        ...     result = cur.fetchone()
+        """
+        # Merge default and provided session parameters
+        merged_params = self.default_session_parameters.copy()
+        if session_parameters:
+            merged_params.update(session_parameters)
+
+        try:
+            # Get connection parameters based on environment
+            connection_params = self.get_connection_params(**kwargs)
+            connection_params["session_parameters"] = merged_params
+
+            connection = connect(**connection_params)
+
+            cursor = (
+                connection.cursor(DictCursor)
+                if use_dict_cursor
+                else connection.cursor()
+            )
+
+            try:
+                yield connection, cursor
+            finally:
+                cursor.close()
+                connection.close()
+
+        except Exception as e:
+            logger.error(f"Error establishing Snowflake connection: {e}")
             raise
 
     def set_query_tag(
@@ -162,16 +315,18 @@ class SnowflakeService:
         if major_version is not None and minor_version is not None:
             query_tag["version"] = {"major": major_version, "minor": minor_version}
 
+        # Set the query tag in default session parameters
+        self.default_session_parameters["QUERY_TAG"] = json.dumps(query_tag)
+
         try:
-            # Use connection manager to set query tag and test connection
-            self.connection_manager.set_query_tag(query_tag)
-            with self.connection_manager.get_connection() as (con, cur):
+            # Test connection with the query tag
+            with self.get_connection() as (con, cur):
                 cur.execute("SELECT 1").fetchone()
         except Exception as e:
             logger.warning(f"Error setting query tag: {e}")
 
 
-def get_var(var_name: str, env_var_name: str, args) -> str:
+def get_var(var_name: str, env_var_name: str, args) -> Optional[str]:
     """
     Retrieve variable value from command line arguments or environment variables.
 
@@ -190,7 +345,7 @@ def get_var(var_name: str, env_var_name: str, args) -> str:
 
     Returns
     -------
-    str
+    Optional[str]
         The variable value if found in either source, None otherwise
 
     Examples
@@ -208,9 +363,16 @@ def get_var(var_name: str, env_var_name: str, args) -> str:
     """
 
     if getattr(args, var_name):
+        print(5)
+        print(var_name)
         return getattr(args, var_name)
     if env_var_name in os.environ:
+        print(6)
+        print(var_name)
         return os.environ[env_var_name]
+    print(7)
+    print(var_name)
+    return None
 
 
 def create_snowflake_service():
@@ -271,6 +433,7 @@ def create_snowflake_service():
     username = get_var("username", "SNOWFLAKE_USER", args)
     pat = get_var("pat", "SNOWFLAKE_PAT", args)
     service_config_file = get_var("service_config_file", "SERVICE_CONFIG_FILE", args)
+    print(service_config_file)
 
     parameters = dict(
         account_identifier=account_identifier,
@@ -280,12 +443,24 @@ def create_snowflake_service():
         transport=args.transport,
     )
 
+    print(parameters.items())
+    print(1)
+
     if not all(parameters.values()):
+        print(2)
         raise MissingArgumentsException(
             missing=[k for k, v in parameters.items() if not v]
         ) from None
     else:
-        snowflake_service = SnowflakeService(**parameters)
+        print(3)
+        # Type assertion since we've validated all values are not None
+        snowflake_service = SnowflakeService(
+            account_identifier=account_identifier or "",
+            username=username or "",
+            pat=pat or "",
+            service_config_file=service_config_file or "",
+            transport=args.transport,
+        )
 
         return snowflake_service
 

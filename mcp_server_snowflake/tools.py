@@ -18,10 +18,9 @@ import mcp_server_snowflake.prompts as prompts
 from mcp_server_snowflake.environment import construct_snowflake_post
 from mcp_server_snowflake.utils import SnowflakeException, SnowflakeResponse
 
-sfse = SnowflakeResponse()  # For parsing Snowflake responses
+sfse = SnowflakeResponse()
 
 
-# Cortex Search Service
 @sfse.snowflake_response(api="search")
 async def query_cortex_search(
     auth_manager,
@@ -151,7 +150,7 @@ def create_search_wrapper(**kwargs):
             service_details = kwargs.get("service_details")
 
             return await query_cortex_search(
-                auth_manager=snowflake_service.auth_manager,
+                auth_manager=snowflake_service,
                 query=query,
                 columns=columns,
                 filter_query=filter_query,
@@ -164,7 +163,6 @@ def create_search_wrapper(**kwargs):
     return search_wrapper
 
 
-# Cortex Analyst Service
 @sfse.snowflake_response(api="analyst")
 async def query_cortex_analyst(
     auth_manager,
@@ -283,7 +281,7 @@ def create_cortex_analyst_wrapper(**kwargs):
             service_details = kwargs.get("service_details")
 
             return await query_cortex_analyst(
-                auth_manager=snowflake_service.auth_manager,
+                auth_manager=snowflake_service,
                 semantic_model=service_details.get("semantic_model"),
                 query=query,
                 username=snowflake_service.username,
