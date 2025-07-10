@@ -11,6 +11,7 @@
 # limitations under the License.
 import json
 import logging
+import re
 from functools import wraps
 from textwrap import dedent
 from typing import Awaitable, Callable, Optional, TypeVar, Union
@@ -24,6 +25,14 @@ logger = logging.getLogger(__name__)
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+def sanitize_tool_name(service_name: str) -> str:
+    """Sanitize service name to create a valid Python identifier for MCP tool name."""
+    sanitized = re.sub(r"[^a-zA-Z0-9_]", "_", service_name)
+    if sanitized and sanitized[0].isdigit():
+        sanitized = f"service_{sanitized}"
+    return sanitized
 
 
 class AnalystResponse(BaseModel):

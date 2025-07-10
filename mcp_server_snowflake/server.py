@@ -31,6 +31,7 @@ from mcp_server_snowflake.utils import (
     MissingArgumentsException,
     cleanup_snowflake_service,
     load_tools_config_resource,
+    sanitize_tool_name,
 )
 
 # Used to quantify Snowflake usage
@@ -529,7 +530,7 @@ def initialize_tools(snowflake_service):
                 server.add_tool(
                     Tool.from_function(
                         fn=search_wrapper,
-                        name=service.get("service_name"),
+                        name=sanitize_tool_name(service.get("service_name")),
                         description=service.get(
                             "description",
                             f"Search service: {service.get('service_name')}",
@@ -545,7 +546,7 @@ def initialize_tools(snowflake_service):
                 server.add_tool(
                     Tool.from_function(
                         fn=cortex_analyst_wrapper,
-                        name=service.get("service_name"),
+                        name=sanitize_tool_name(service.get("service_name")),
                         description=service.get(
                             "description",
                             f"Analyst service: {service.get('service_name')}",
