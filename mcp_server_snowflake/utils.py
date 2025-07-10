@@ -254,8 +254,8 @@ class SnowflakeException(Exception):
         Name of the Cortex tool that generated the error
     message : str
         Raw error message from the API
-    status_code : int, optional
-        HTTP status code from the API response, by default None
+    status_code : int
+        HTTP status code from the API response
 
     Attributes
     ----------
@@ -276,11 +276,11 @@ class SnowflakeException(Exception):
     Raising a Snowflake exception:
 
     >>> raise SnowflakeException(
-    ...     tool="Cortex Analyst", message="Model not found", status_code=400
+    ...     tool="Cortex Analyst", message="Resource not found", status_code=400
     ... )
     """
 
-    def __init__(self, tool: str, message, status_code: Optional[int] = None):
+    def __init__(self, tool: str, message, status_code: int):
         self.message = message
         self.status_code = status_code
         super().__init__(message)
@@ -301,16 +301,12 @@ class SnowflakeException(Exception):
         Notes
         -----
         Status code handling:
-        - 400: Bad request errors with model validation
+        - 400: Bad request errors (resource not found, invalid parameters)
         - 401: Authorization/authentication errors
         - Other codes: Generic error with status code
         """
         if self.status_code == 400:
-            if "unknown model" in self.message:
-                return f"{self.tool} Error: Selected model not available or invalid.\n\nError Message: {self.message} "
-            else:
-                return f"{self.tool} Error: The resource cannot be found.\n\nError Message: {self.message} "
-
+            return f"{self.tool} Error: The resource cannot be found or the request is invalid.\n\nError Message: {self.message} "
         elif self.status_code == 401:
             return f"{self.tool} Error: An authorization error occurred.\n\nError Message: {self.message} "
         else:
