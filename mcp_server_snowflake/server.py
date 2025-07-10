@@ -181,10 +181,9 @@ class SnowflakeService:
             }
         else:
             return {
-                "X-Snowflake-Authorization-Token-Type": "PROGRAMMATIC_ACCESS_TOKEN",
-                "Authorization": f"Bearer {self.get_token()}",
-                "Content-Type": "application/json",
                 "Accept": "application/json, text/event-stream",
+                "Content-Type": "application/json",
+                "Authorization": f'Snowflake Token="{self.get_token()}"',
             }
 
     def get_token(self) -> str:

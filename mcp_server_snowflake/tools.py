@@ -94,6 +94,7 @@ async def query_cortex_search(
 
     if response.status_code == 200:
         return response
+
     else:
         raise SnowflakeException(
             tool="Cortex Search",
