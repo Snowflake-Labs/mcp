@@ -363,15 +363,9 @@ def get_var(var_name: str, env_var_name: str, args) -> Optional[str]:
     """
 
     if getattr(args, var_name):
-        print(5)
-        print(var_name)
         return getattr(args, var_name)
     if env_var_name in os.environ:
-        print(6)
-        print(var_name)
         return os.environ[env_var_name]
-    print(7)
-    print(var_name)
     return None
 
 
@@ -433,7 +427,6 @@ def create_snowflake_service():
     username = get_var("username", "SNOWFLAKE_USER", args)
     pat = get_var("pat", "SNOWFLAKE_PAT", args)
     service_config_file = get_var("service_config_file", "SERVICE_CONFIG_FILE", args)
-    print(service_config_file)
 
     parameters = dict(
         account_identifier=account_identifier,
@@ -443,16 +436,11 @@ def create_snowflake_service():
         transport=args.transport,
     )
 
-    print(parameters.items())
-    print(1)
-
     if not all(parameters.values()):
-        print(2)
         raise MissingArgumentsException(
             missing=[k for k, v in parameters.items() if not v]
         ) from None
     else:
-        print(3)
         # Type assertion since we've validated all values are not None
         snowflake_service = SnowflakeService(
             account_identifier=account_identifier or "",
