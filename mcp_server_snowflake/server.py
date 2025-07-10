@@ -220,6 +220,7 @@ class SnowflakeService:
     def get_connection(
         self,
         use_dict_cursor: bool = False,
+        session_parameters: Optional[Dict[str, Any]] = None,
     ) -> Generator[Tuple[Any, Any], None, None]:
         """
         Get a Snowflake connection with the specified configuration.
@@ -231,6 +232,8 @@ class SnowflakeService:
         ----------
         use_dict_cursor : bool, default=False
             Whether to use DictCursor instead of regular cursor
+        session_parameters : dict, optional
+            Additional session parameters to add to connection such as query tag
 
         Yields
         ------
@@ -247,7 +250,10 @@ class SnowflakeService:
         """
 
         try:
-            connection = connect(**self.connection_params)
+            # connection_params = self.connection_params.copy()
+            connection = connect(
+                **self.connection_params, session_parameters=session_parameters
+            )
 
             cursor = (
                 connection.cursor(DictCursor)
@@ -287,11 +293,14 @@ class SnowflakeService:
             query_tag["version"] = {"major": major_version, "minor": minor_version}
 
         # Set the query tag in default session parameters
-        self.default_session_parameters["QUERY_TAG"] = json.dumps(query_tag)
+        session_parameters = {"QUERY_TAG": json.dumps(query_tag)}
 
         try:
             # Test connection with the query tag
-            with self.get_connection() as (con, cur):
+            with self.get_connection(session_parameters=session_parameters) as (
+                con,
+                cur,
+            ):
                 cur.execute("SELECT 1").fetchone()
         except Exception as e:
             logger.warning(f"Error setting query tag: {e}")
