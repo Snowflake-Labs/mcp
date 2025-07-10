@@ -323,7 +323,7 @@ class MissingArgumentsException(Exception):
         super().__init__(missing)
 
     def __str__(self):
-        missing_str = "\n\t\t".join([f"--{i}" for i in self.missing])
+        missing_str = "\n\t\t".join([f"{i}" for i in self.missing])
         message = f"""
         -----------------------------------------------------------------------------------
         Required arguments missing:
