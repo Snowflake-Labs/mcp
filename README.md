@@ -44,16 +44,25 @@ analyst_services: # List all Cortex Analyst semantic models/views
       "<Analyst service that ...>"
 ```
 
-## Snowflake Account Identifier
+## Connecting to Snowflake
 
-A Snowflake username and account identifier will be necessary to connect. From Snowsight, select your user name and [Connect a tool to Snowflake](https://docs.snowflake.com/user-guide/gen-conn-config#using-sf-web-interface-to-get-connection-settings) to obtain your Snowflake account identifier. This will be passed to the server at startup.
+Connections to Snowflake in the MCP serverare initiated via the [Snowflake Python Connector](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect#setting-session-parameters). Connection parameters can be passed as CLI arguments and/or environment variables. Below are the options for passing connection parameters to the MCP server.
 
-## Programmatic Access Token Authentication
-
-The MCP server uses [Snowflake Programmatic Access Token (PAT)](https://docs.snowflake.com/en/user-guide/programmatic-access-tokens) for authentication. Follow the [instructions](https://docs.snowflake.com/en/user-guide/programmatic-access-tokens#generating-a-programmatic-access-token) to generate a new PAT for a given user. Be sure to copy the token - it will be passed to the server at startup.
-
-> [!IMPORTANT]
-> PATs do not use secondary roles. Either select a specific role that has access to all desired services and their related objects OR select Any of my roles.
+| Parameter | CLI Arguments | Environment Variable | Description |
+|-----------|--------------|---------------------|-------------|
+| Account | --account, --account-identifier | SNOWFLAKE_ACCOUNT | Account identifier (e.g. xy12345.us-east-1) |
+| Host | --host | SNOWFLAKE_HOST | Snowflake host URL |
+| User | --user, --username | SNOWFLAKE_USER | Username for authentication |
+| Password/PAT | --password, --pat | SNOWFLAKE_PASSWORD, SNOWFLAKE_PAT | Password or programmatic access token |
+| Role | --role | SNOWFLAKE_ROLE | Role to use for connection |
+| Warehouse | --warehouse | SNOWFLAKE_WAREHOUSE | Warehouse to use for queries |
+| Passcode in Password | --passcode-in-password | - | Whether passcode is embedded in password |
+| Passcode | --passcode | SNOWFLAKE_PASSCODE | MFA passcode for authentication |
+| Private Key | --private-key | SNOWFLAKE_PRIVATE_KEY | Private key for key pair authentication |
+| Private Key File | --private-key-file | SNOWFLAKE_PRIVATE_KEY_FILE | Path to private key file |
+| Private Key Password | --private-key-pwd | SNOWFLAKE_PRIVATE_KEY_PWD | Password for encrypted private key |
+| Authenticator | --authenticator | - | Authentication type (default: snowflake) |
+| Connection Name | --connection-name | - | Optional name for the connection |
 
 # Using with MCP Clients
 
@@ -64,7 +73,7 @@ To integrate this server with Claude Desktop as the MCP Client, add the followin
 - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
 - Windows: %APPDATA%\Claude\claude_desktop_config.json
 
-Set the path to the service configuration file and values for environment variables SNOWFLAKE_PAT, SNOWFLAKE_ACCOUNT, and SNOWFLAKE_USER.
+Set the path to the service configuration file and values for environment variables SNOWFLAKE_PASSWORD, SNOWFLAKE_ACCOUNT, and SNOWFLAKE_USER.
 
 ```
 {
@@ -79,7 +88,7 @@ Set the path to the service configuration file and values for environment variab
         "<path to file>/tools_config.yaml"
       ],
       "env": {
-        "SNOWFLAKE_PAT": "<programmatic_access_token>",
+        "SNOWFLAKE_PASSWORD": "<snowflake-password>",
         "SNOWFLAKE_ACCOUNT": "<account-identifier>",
         "SNOWFLAKE_USER": "<username>"
       }
@@ -104,8 +113,8 @@ Register the MCP server in cursor by opening Cursor and navigating to Settings -
         "<account-identifier>",
         "--username",
         "<username>",
-        "--pat",
-        "<programmatic_access_token>"
+        "--password",
+        "<snowflake-password>"
       ]
     }
   }
@@ -136,9 +145,9 @@ mcp:
     servers:
         mcp-server-snowflake:
             env:
-                SNOWFLAKE_PAT: <add-PAT>
-                SNOWFLAKE_ACCOUNT: <add-snowflake-account-identifier>
-                SNOWFLAKE_USER: <add-snowflake-username>
+                SNOWFLAKE_PASSWORD: <snowflake-password>
+                SNOWFLAKE_ACCOUNT: <snowflake-account-identifier>
+                SNOWFLAKE_USER: <snowflake-username>
 ```
 
 <img src="https://sfquickstarts.s3.us-west-1.amazonaws.com/misc/mcp/fast-agent.gif" width="800"/>
@@ -153,11 +162,20 @@ For prerequisites, environment setup, step-by-step guide and instructions, pleas
 
 ## Running MCP Inspector
 
-MCP Inspector is suggested for troubleshooting the MCP server. Run the below to launch the inspector. Be sure to set values for service config file, SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, and SNOWFLAKE_PAT are set accordingly.
+MCP Inspector is suggested for troubleshooting the MCP server. Run the below to launch the inspector. Be sure to set values for service config file, SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, and SNOWFLAKE_PASSWORD are set accordingly.
 
-`npx @modelcontextprotocol/inspector uvx --from "git+https://github.com/Snowflake-Labs/mcp" mcp-server-snowflake --service-config-file "<path_to_file>/tools_config.yaml" --account-identifier $SNOWFLAKE_ACCOUNT --username $SNOWFLAKE_USER --pat $SNOWFLAKE_PAT`
+`npx @modelcontextprotocol/inspector uvx --from "git+https://github.com/Snowflake-Labs/mcp" mcp-server-snowflake --service-config-file "<path_to_file>/tools_config.yaml" --account-identifier $SNOWFLAKE_ACCOUNT --username $SNOWFLAKE_USER --password $SNOWFLAKE_PASSWORD`
 
 # FAQs
+
+#### How do I connect to Snowflake?
+
+- The MCP server supports all connection methods supported by the Snowflake Python Connector.
+See [Connecting to Snowflake with the Python Connector](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect) for more information.
+
+#### Can I use a Programmatic Access Token (PAT) instead of a password?
+
+- Yes. Pass it to either CLI flag --password or --pat or set as environment variable SNOWFLAKE_PASSWORD or SNOWFLAKE_PAT.
 
 #### How do I try this?
 
@@ -169,7 +187,7 @@ MCP Inspector is suggested for troubleshooting the MCP server. Run the below to 
 
 #### I'm receiving permission errors from my tool calls.
 
-- Programmatic Access Tokens do not evaluate secondary roles. When creating them, please select a single role that has access to all services and their underlying objects OR select any role. A new PAT will need to be created to alter this property.
+- If using a Programmatic Access Tokens, note that they do not evaluate secondary roles. When creating them, please select a single role that has access to all services and their underlying objects OR select any role. A new PAT will need to be created to alter this property.
 
 #### How many Cortex Search or Cortex Analysts can I add?
 

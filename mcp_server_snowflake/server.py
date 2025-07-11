@@ -35,7 +35,7 @@ from mcp_server_snowflake.utils import (
 # Used to quantify Snowflake usage
 server_name = "mcp-server-snowflake"
 tag_major_version = 0
-tag_minor_version = 3
+tag_minor_version = 4
 query_tag = {"origin": "sf_sit", "name": "mcp_server"}
 
 logger = logging.getLogger(server_name)
