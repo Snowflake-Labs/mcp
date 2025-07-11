@@ -169,7 +169,6 @@ async def query_cortex_analyst(
     auth_manager,
     semantic_model: str,
     query: str,
-    username: str,
 ) -> dict:
     """
     Query Snowflake Cortex Analyst service for natural language to SQL conversion.
@@ -189,9 +188,6 @@ async def query_cortex_analyst(
         - "MY_DB.MY_SCH.MY_SEMANTIC_VIEW"
     query : str
         Natural language query string to submit to Cortex Analyst
-    username : str
-        Snowflake username for authentication.
-        This is used in the decorator to execute the query via SnowflakeConnectionManager.
 
     Returns
     -------
@@ -285,7 +281,6 @@ def create_cortex_analyst_wrapper(**kwargs):
                 auth_manager=snowflake_service,
                 semantic_model=service_details.get("semantic_model"),
                 query=query,
-                username=snowflake_service.username,
             )
 
     return cortex_analyst_wrapper
