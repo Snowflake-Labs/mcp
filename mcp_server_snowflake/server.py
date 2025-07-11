@@ -105,7 +105,6 @@ class SnowflakeService:
         self._is_spcs_container = is_running_in_spcs_container()
 
         self.unpack_service_specs()
-        self.set_query_tag()
         # Persist connection to avoid closing it after each request
         self.connection = self._get_persistent_connection()
 
@@ -219,10 +218,13 @@ class SnowflakeService:
             A Snowflake connection object
         """
         try:
+            query_tag_params = self.get_query_tag_param()
+
             if session_parameters is not None:
-                session_parameters.update(self.get_query_tag_param())
+                if query_tag_params:
+                    session_parameters.update(query_tag_params)
             else:
-                session_parameters = self.get_query_tag_param()
+                session_parameters = query_tag_params
 
             connection = connect(
                 **self.connection_params,
@@ -320,34 +322,6 @@ class SnowflakeService:
             return session_parameters
         else:
             return None
-
-    def set_query_tag(
-        self,
-    ) -> None:
-        """
-        Set the query tag for the Snowflake service.
-
-        Parameters
-        ----------
-        query_tag : dict[str, str], optional
-            Query tag dictionary
-        major_version : int, optional
-            Major version of the query tag
-        minor_version : int, optional
-            Minor version of the query tag
-        """
-
-        session_parameters = self.get_query_tag_param()
-
-        try:
-            # Test connection with the query tag
-            with self.get_connection(session_parameters=session_parameters) as (
-                con,
-                cur,
-            ):
-                cur.execute("SELECT 1").fetchone()
-        except Exception as e:
-            logger.warning(f"Error setting query tag: {e}")
 
 
 def get_var(var_name: str, env_var_name: str, args) -> Optional[str]:
