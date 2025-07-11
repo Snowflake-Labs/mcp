@@ -73,6 +73,8 @@ class SnowflakeService:
         List of configured analyst service specifications
     agent_services : list
         List of configured agent service specifications
+    connection : snowflake.connector.Connection
+        Snowflake connection object
     """
 
     def __init__(
@@ -97,6 +99,8 @@ class SnowflakeService:
         self.set_query_tag(
             major_version=tag_major_version, minor_version=tag_minor_version
         )
+        # Persist connection to avoid closing it after each request
+        self.connection = self._get_persistent_connection()
 
     def unpack_service_specs(self) -> None:
         """
@@ -193,8 +197,7 @@ class SnowflakeService:
         if self._is_spcs_container:
             return get_spcs_container_token()
         else:
-            with self.get_connection() as (con, cur):
-                return con.rest.token
+            return self.connection.rest.token
 
     def get_api_host(self) -> str:
         """
@@ -214,6 +217,37 @@ class SnowflakeService:
     def is_spcs_container_environment(self) -> bool:
         """Check if running in SPCS container environment."""
         return self._is_spcs_container
+
+    def _get_persistent_connection(
+        self,
+        session_parameters: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Get a persistent Snowflake connection.
+
+        This method creates a connection that will be kept alive and should be
+        explicitly closed when no longer needed.
+
+        Parameters
+        ----------
+        session_parameters : dict, optional
+            Additional session parameters to add to connection
+
+        Returns
+        -------
+        connection
+            A Snowflake connection object
+        """
+        try:
+            connection = connect(
+                **self.connection_params,
+                session_parameters=session_parameters,
+                client_session_keep_alive=True,
+            )
+            return connection
+        except Exception as e:
+            logger.error(f"Error establishing persistent Snowflake connection: {e}")
+            raise
 
     @contextmanager
     def get_connection(
@@ -241,17 +275,16 @@ class SnowflakeService:
 
         Examples
         --------
-        >>> with service.get_connection(
-        ...     role="ANALYST", warehouse="COMPUTE_WH", use_dict_cursor=True
-        ... ) as (con, cur):
+        >>> with service.get_connection(use_dict_cursor=True) as (con, cur):
         ...     cur.execute("SELECT current_version()")
         ...     result = cur.fetchone()
         """
 
         try:
-            # connection_params = self.connection_params.copy()
             connection = connect(
-                **self.connection_params, session_parameters=session_parameters
+                **self.connection_params,
+                session_parameters=session_parameters,
+                client_session_keep_alive=False,
             )
 
             cursor = (
@@ -507,14 +540,18 @@ def initialize_tools(snowflake_service):
 
 
 def main():
-    snowflake_service = create_snowflake_service()
-    initialize_tools(snowflake_service)
-    initialize_resources(snowflake_service)
+    try:
+        snowflake_service = create_snowflake_service()
+        initialize_tools(snowflake_service)
+        initialize_resources(snowflake_service)
 
-    if snowflake_service.transport in ["sse", "streamable-http"]:
-        server.run(transport=snowflake_service.transport, host="0.0.0.0", port=9000)
-    else:
-        server.run(transport=snowflake_service.transport)
+        if snowflake_service.transport in ["sse", "streamable-http"]:
+            server.run(transport=snowflake_service.transport, host="0.0.0.0", port=9000)
+        else:
+            server.run(transport=snowflake_service.transport)
+    finally:
+        if snowflake_service.connection:
+            snowflake_service.connection.close()
 
 
 if __name__ == "__main__":
