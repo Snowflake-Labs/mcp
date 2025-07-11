@@ -32,9 +32,11 @@ from mcp_server_snowflake.utils import (
     load_tools_config_resource,
 )
 
+# Used to quantify Snowflake usage
 server_name = "mcp-server-snowflake"
 tag_major_version = 0
 tag_minor_version = 3
+query_tag = {"origin": "sf_sit", "name": "mcp_server"}
 
 logger = logging.getLogger(server_name)
 
@@ -91,14 +93,19 @@ class SnowflakeService:
         self.analyst_services = []
         self.agent_services = []
         self.default_session_parameters: Dict[str, Any] = {}
+        self.query_tag = query_tag if query_tag is not None else None
+        self.tag_major_version = (
+            tag_major_version if tag_major_version is not None else None
+        )
+        self.tag_minor_version = (
+            tag_minor_version if tag_minor_version is not None else None
+        )
 
         # Environment detection for authentication
         self._is_spcs_container = is_running_in_spcs_container()
 
         self.unpack_service_specs()
-        self.set_query_tag(
-            major_version=tag_major_version, minor_version=tag_minor_version
-        )
+        self.set_query_tag()
         # Persist connection to avoid closing it after each request
         self.connection = self._get_persistent_connection()
 
@@ -134,39 +141,6 @@ class SnowflakeService:
         except Exception as e:
             logger.error(f"Error extracting service specifications: {e}")
             raise
-
-    # def get_connection_params(self) -> Dict[str, Any]:
-    #     """
-    #     Get connection parameters for snowflake.connector.connect().
-
-    #     Parameters
-    #     ----------
-
-    #     Returns
-    #     -------
-    #     Dict[str, Any]
-    #         Connection parameters
-    #     """
-    #     if self._is_spcs_container:
-    #         logger.info("Using SPCS container OAuth authentication")
-
-    #         params = {
-    #             "host": os.getenv("SNOWFLAKE_HOST"),
-    #             "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-    #             "token": get_spcs_container_token(),
-    #             "authenticator": "oauth",
-    #         }
-    #         params = {k: v for k, v in params.items() if v is not None}
-    #     else:
-    #         logger.info("Using external PAT authentication")
-    #         params = {
-    #             "account": self.account_identifier,
-    #             "user": self.username,
-    #             "password": self.pat,
-    #         }
-
-    # params.update(kwargs)
-    # return params
 
     def get_api_headers(self) -> Dict[str, str]:
         """
@@ -221,6 +195,8 @@ class SnowflakeService:
     def _get_persistent_connection(
         self,
         session_parameters: Optional[Dict[str, Any]] = None,
+        major_version: Optional[int] = None,
+        minor_version: Optional[int] = None,
     ) -> Any:
         """
         Get a persistent Snowflake connection.
@@ -232,6 +208,10 @@ class SnowflakeService:
         ----------
         session_parameters : dict, optional
             Additional session parameters to add to connection
+        major_version : int, optional
+            Major version of the query tag
+        minor_version : int, optional
+            Minor version of the query tag
 
         Returns
         -------
@@ -239,6 +219,11 @@ class SnowflakeService:
             A Snowflake connection object
         """
         try:
+            if session_parameters is not None:
+                session_parameters.update(self.get_query_tag_param())
+            else:
+                session_parameters = self.get_query_tag_param()
+
             connection = connect(
                 **self.connection_params,
                 session_parameters=session_parameters,
@@ -303,11 +288,41 @@ class SnowflakeService:
             logger.error(f"Error establishing Snowflake connection: {e}")
             raise
 
+    def get_query_tag_param(
+        self,
+    ) -> Optional[Dict[str, Any]] | None:
+        """
+        Get the query tag parameters for the Snowflake service.
+
+        Parameters
+        ----------
+        query_tag : dict[str, str], optional
+            Query tag dictionary
+        major_version : int, optional
+            Major version of the query tag
+        minor_version : int, optional
+            Minor version of the query tag
+        """
+        if self.query_tag is not None:
+            query_tag = self.query_tag.copy()
+            if (
+                self.tag_major_version is not None
+                and self.tag_minor_version is not None
+            ):
+                query_tag["version"] = {
+                    "major": self.tag_major_version,
+                    "minor": self.tag_minor_version,
+                }
+
+            # Set the query tag in default session parameters
+            session_parameters = {"QUERY_TAG": json.dumps(query_tag)}
+
+            return session_parameters
+        else:
+            return None
+
     def set_query_tag(
         self,
-        query_tag: dict[str, str | dict] = {"origin": "sf_sit", "name": "mcp_server"},
-        major_version: Optional[int] = None,
-        minor_version: Optional[int] = None,
     ) -> None:
         """
         Set the query tag for the Snowflake service.
@@ -321,11 +336,8 @@ class SnowflakeService:
         minor_version : int, optional
             Minor version of the query tag
         """
-        if major_version is not None and minor_version is not None:
-            query_tag["version"] = {"major": major_version, "minor": minor_version}
 
-        # Set the query tag in default session parameters
-        session_parameters = {"QUERY_TAG": json.dumps(query_tag)}
+        session_parameters = self.get_query_tag_param()
 
         try:
             # Test connection with the query tag
