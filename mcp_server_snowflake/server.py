@@ -186,6 +186,14 @@ class SnowflakeService:
         else:
             return self.connection_params.get("account")
 
+    @staticmethod
+    def send_initial_query(connection: Any) -> None:
+        """
+        Send an initial query to the Snowflake service.
+        """
+        with connection.cursor() as cur:
+            cur.execute("SELECT 'MCP Server Snowflake'").fetchone()
+
     @property
     def is_spcs_container_environment(self) -> bool:
         """Check if running in SPCS container environment."""
@@ -194,8 +202,6 @@ class SnowflakeService:
     def _get_persistent_connection(
         self,
         session_parameters: Optional[Dict[str, Any]] = None,
-        major_version: Optional[int] = None,
-        minor_version: Optional[int] = None,
     ) -> Any:
         """
         Get a persistent Snowflake connection.
@@ -231,7 +237,9 @@ class SnowflakeService:
                 session_parameters=session_parameters,
                 client_session_keep_alive=True,
             )
-            return connection
+            if connection:  # Send zero compute query to capture query tag
+                self.send_initial_query(connection)
+                return connection
         except Exception as e:
             logger.error(f"Error establishing persistent Snowflake connection: {e}")
             raise
@@ -247,6 +255,9 @@ class SnowflakeService:
 
         This context manager ensures proper connection handling and cleanup.
         It automatically detects the environment and uses appropriate authentication.
+
+        If the connection is not established, it will be established with the specified parameters.
+        If the connection is already established, it will be used and session_parameters ignored.
 
         Parameters
         ----------
@@ -268,23 +279,24 @@ class SnowflakeService:
         """
 
         try:
-            connection = connect(
-                **self.connection_params,
-                session_parameters=session_parameters,
-                client_session_keep_alive=False,
-            )
+            if self.connection is None:
+                self.connection = connect(
+                    **self.connection_params,
+                    session_parameters=session_parameters,
+                    client_session_keep_alive=False,
+                )
 
             cursor = (
-                connection.cursor(DictCursor)
+                self.connection.cursor(DictCursor)
                 if use_dict_cursor
-                else connection.cursor()
+                else self.connection.cursor()
             )
 
             try:
-                yield connection, cursor
+                yield self.connection, cursor
             finally:
                 cursor.close()
-                connection.close()
+                # connection.close()
 
         except Exception as e:
             logger.error(f"Error establishing Snowflake connection: {e}")
@@ -536,8 +548,9 @@ def main():
         else:
             server.run(transport=snowflake_service.transport)
     finally:
-        if snowflake_service.connection:
-            snowflake_service.connection.close()
+        if snowflake_service:
+            if snowflake_service.connection:
+                snowflake_service.connection.close()
 
 
 if __name__ == "__main__":
