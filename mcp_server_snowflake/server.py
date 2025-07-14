@@ -181,10 +181,7 @@ class SnowflakeService:
         str
             API host URL
         """
-        if self._is_spcs_container:
-            return os.getenv("SNOWFLAKE_HOST", self.connection_params.get("account"))
-        else:
-            return self.connection_params.get("account")
+        return os.getenv("SNOWFLAKE_HOST", self.connection.host)
 
     @staticmethod
     def send_initial_query(connection: Any) -> None:
