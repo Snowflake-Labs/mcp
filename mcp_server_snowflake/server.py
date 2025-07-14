@@ -9,6 +9,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# Suppress OpenSSL deprecation warnings from Snowflake connector's vendored urllib3
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message=".*Attempting to mutate a Context after a Connection was created.*",
+    category=DeprecationWarning,
+)
+
 import argparse
 import json
 import logging

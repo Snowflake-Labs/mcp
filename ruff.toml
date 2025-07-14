@@ -48,6 +48,10 @@ unfixable = []
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
+[lint.per-file-ignores]
+# TODO: remove when we no longer need to suppress warnings before importing connector
+"mcp_server_snowflake/server.py" = ["E402"]
+
 [format]
 # Like Black, use double quotes for strings.
 quote-style = "double"
