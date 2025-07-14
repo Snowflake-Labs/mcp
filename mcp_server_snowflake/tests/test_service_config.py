@@ -13,7 +13,7 @@
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 import yaml
@@ -35,7 +35,7 @@ def mock_connection_params():
 def mock_snowflake_connect():
     """Mock the Snowflake connection for all tests."""
     with patch("mcp_server_snowflake.server.connect") as mock_connect:
-        mock_connect.return_value = Mock()
+        mock_connect.return_value = MagicMock()
         yield mock_connect
 
 
