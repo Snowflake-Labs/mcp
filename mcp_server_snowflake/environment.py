@@ -61,7 +61,7 @@ def construct_snowflake_post(auth_manager, api_path: str) -> tuple[str, dict[str
     if host.startswith(("http://", "https://")):
         base_url = host
     else:
-        if not host.endswith(".snowflakecomputing.com") and "." not in host:
+        if not host.endswith(".snowflakecomputing.com"):
             host = f"{host}.snowflakecomputing.com"
         base_url = f"https://{host}"
 
