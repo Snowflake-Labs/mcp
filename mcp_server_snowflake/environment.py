@@ -58,7 +58,12 @@ def construct_snowflake_post(auth_manager, api_path: str) -> tuple[str, dict[str
     host = auth_manager.get_api_host()
     headers = auth_manager.get_api_headers()
 
-    base_url = f"https://{host}"
+    if host.startswith(("http://", "https://")):
+        base_url = host
+    else:
+        if not host.endswith(".snowflakecomputing.com") and "." not in host:
+            host = f"{host}.snowflakecomputing.com"
+        base_url = f"https://{host}"
 
     return urljoin(base_url, api_path), headers
 
