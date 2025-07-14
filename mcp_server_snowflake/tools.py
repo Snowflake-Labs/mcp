@@ -74,7 +74,7 @@ async def query_cortex_search(
     https://docs.snowflake.com/developer-guide/snowflake-rest-api/reference/cortex-search-service
     """
     host, headers = construct_snowflake_post(
-        auth_manager=auth_manager,
+        service=auth_manager,
         api_path=f"/api/v2/databases/{database_name}/schemas/{schema_name}/cortex-search-services/{service_name}:query",
     )
 
@@ -207,7 +207,7 @@ async def query_cortex_analyst(
     Currently configured for non-streaming responses.
     """
     host, headers = construct_snowflake_post(
-        auth_manager=auth_manager,
+        service=auth_manager,
         api_path="/api/v2/cortex/analyst/message",
     )
 

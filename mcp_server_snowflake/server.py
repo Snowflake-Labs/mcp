@@ -153,25 +153,17 @@ class SnowflakeService:
         """
         if self._is_spcs_container:
             return {
-                "Authorization": f"Bearer {self.get_token()}",
+                "Authorization": f"Bearer {get_spcs_container_token()}",
                 "Content-Type": "application/json",
                 "Accept": "application/json, text/event-stream",
             }
         else:
+            # For external environments, we need to use the connection token
             return {
                 "Accept": "application/json, text/event-stream",
                 "Content-Type": "application/json",
-                "Authorization": f'Snowflake Token="{self.get_token()}"',
+                "Authorization": f'Snowflake Token="{self.connection.rest.token}"',
             }
-
-    def get_token(self) -> str:
-        """
-        Get the connection token for the Snowflake service.
-        """
-        if self._is_spcs_container:
-            return get_spcs_container_token()
-        else:
-            return self.connection.rest.token
 
     def get_api_host(self) -> str:
         """
@@ -182,7 +174,12 @@ class SnowflakeService:
         str
             API host URL
         """
-        return os.getenv("SNOWFLAKE_HOST", self.connection.host)
+        if self._is_spcs_container:
+            return os.getenv(
+                "SNOWFLAKE_HOST", self.connection_params.get("account", "")
+            )
+        else:
+            return self.connection.host
 
     @staticmethod
     def send_initial_query(connection: Any) -> None:
@@ -191,11 +188,6 @@ class SnowflakeService:
         """
         with connection.cursor() as cur:
             cur.execute("SELECT 'MCP Server Snowflake'").fetchone()
-
-    @property
-    def is_spcs_container_environment(self) -> bool:
-        """Check if running in SPCS container environment."""
-        return self._is_spcs_container
 
     def _get_persistent_connection(
         self,
@@ -230,8 +222,24 @@ class SnowflakeService:
             else:
                 session_parameters = query_tag_params
 
+            # Get connection parameters based on environment
+            if self._is_spcs_container:
+                logger.info("Using SPCS container OAuth authentication")
+                connection_params = {
+                    "host": os.getenv("SNOWFLAKE_HOST"),
+                    "account": os.getenv("SNOWFLAKE_ACCOUNT"),
+                    "token": get_spcs_container_token(),
+                    "authenticator": "oauth",
+                }
+                connection_params = {
+                    k: v for k, v in connection_params.items() if v is not None
+                }
+            else:
+                logger.info("Using external authentication")
+                connection_params = self.connection_params.copy()
+
             connection = connect(
-                **self.connection_params,
+                **connection_params,
                 session_parameters=session_parameters,
                 client_session_keep_alive=True,
             )
@@ -278,8 +286,24 @@ class SnowflakeService:
 
         try:
             if self.connection is None:
+                # Get connection parameters based on environment
+                if self._is_spcs_container:
+                    logger.info("Using SPCS container OAuth authentication")
+                    connection_params = {
+                        "host": os.getenv("SNOWFLAKE_HOST"),
+                        "account": os.getenv("SNOWFLAKE_ACCOUNT"),
+                        "token": get_spcs_container_token(),
+                        "authenticator": "oauth",
+                    }
+                    connection_params = {
+                        k: v for k, v in connection_params.items() if v is not None
+                    }
+                else:
+                    logger.info("Using external authentication")
+                    connection_params = self.connection_params.copy()
+
                 self.connection = connect(
-                    **self.connection_params,
+                    **connection_params,
                     session_parameters=session_parameters,
                     client_session_keep_alive=False,
                 )
