@@ -462,13 +462,8 @@ def create_snowflake_service():
     }
     service_config_file = get_var("service_config_file", "SERVICE_CONFIG_FILE", args)
 
-    required = {
-        "service_config_file": service_config_file,
-    }
-    if not all(required.values()):
-        raise MissingArgumentsException(
-            missing=[k for k, v in required.items() if not v]
-        ) from None
+    if not service_config_file:
+        raise MissingArgumentsException(missing=["service_config_file"]) from None
     try:
         snowflake_service = SnowflakeService(
             service_config_file=service_config_file,
