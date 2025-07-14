@@ -29,6 +29,7 @@ from mcp_server_snowflake.environment import (
 )
 from mcp_server_snowflake.utils import (
     MissingArgumentsException,
+    cleanup_snowflake_service,
     load_tools_config_resource,
 )
 
@@ -531,18 +532,30 @@ def initialize_tools(snowflake_service):
 
 def main():
     try:
+        logger.info("Creating Snowflake service...")
         snowflake_service = create_snowflake_service()
-        initialize_tools(snowflake_service)
-        initialize_resources(snowflake_service)
 
-        if snowflake_service.transport in ["sse", "streamable-http"]:
-            server.run(transport=snowflake_service.transport, host="0.0.0.0", port=9000)
-        else:
-            server.run(transport=snowflake_service.transport)
-    finally:
-        if snowflake_service:
-            if snowflake_service.connection:
-                snowflake_service.connection.close()
+        try:
+            logger.info("Initializing tools and resources...")
+            initialize_tools(snowflake_service)
+            initialize_resources(snowflake_service)
+
+            logger.info(
+                f"Starting server with transport: {snowflake_service.transport}"
+            )
+            if snowflake_service.transport in ["sse", "streamable-http"]:
+                server.run(
+                    transport=snowflake_service.transport, host="0.0.0.0", port=9000
+                )
+            else:
+                server.run(transport=snowflake_service.transport)
+
+        finally:
+            cleanup_snowflake_service(snowflake_service)
+
+    except Exception as e:
+        logger.error(f"Error starting MCP server: {e}")
+        raise
 
 
 if __name__ == "__main__":

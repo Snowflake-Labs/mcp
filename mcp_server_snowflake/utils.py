@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
+import logging
 from functools import wraps
 from textwrap import dedent
 from typing import Awaitable, Callable, Optional, TypeVar, Union
@@ -18,6 +19,8 @@ import requests
 import yaml
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
+
+logger = logging.getLogger(__name__)
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -335,6 +338,27 @@ class MissingArgumentsException(Exception):
         -----------------------------------------------------------------------------------"""
 
         return dedent(message)
+
+
+def cleanup_snowflake_service(snowflake_service):
+    """
+    Clean up Snowflake service resources.
+
+    Parameters
+    ----------
+    snowflake_service : SnowflakeService
+        The service instance to clean up
+    """
+    # This if for the case if the service fails to initialize it will not need to cleanup.
+    if not snowflake_service:
+        return
+
+    try:
+        if hasattr(snowflake_service, "connection") and snowflake_service.connection:
+            logger.info("Closing Snowflake connection...")
+            snowflake_service.connection.close()
+    except Exception as e:
+        logger.error(f"Error closing Snowflake connection: {e}")
 
 
 async def load_tools_config_resource(file_path: str) -> str:
