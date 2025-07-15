@@ -232,11 +232,11 @@ class SnowflakeResponse:
             @wraps(func)
             async def response_parsers(*args: P.args, **kwargs: P.kwargs) -> R:
                 raw_sse = await func(*args, **kwargs)
-                auth_manager = kwargs.get("auth_manager")
+                snowflake_service = kwargs.get("snowflake_service")
                 match api:
                     case "analyst":
                         parsed = self.parse_analyst_response(
-                            response=raw_sse, service=auth_manager
+                            response=raw_sse, service=snowflake_service
                         )
                     case "search":
                         parsed = self.parse_search_response(response=raw_sse)
