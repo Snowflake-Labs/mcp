@@ -46,14 +46,26 @@ analyst_services: # List all Cortex Analyst semantic models/views
 
 ## Connecting to Snowflake
 
-Connections to Snowflake in the MCP serverare initiated via the [Snowflake Python Connector](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect#setting-session-parameters). Connection parameters can be passed as CLI arguments and/or environment variables. Below are the options for passing connection parameters to the MCP server.
+The MCP server uses the [Snowflake Python Connector](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect) for all authentication and connection methods. **Please refer to the official Snowflake documentation for comprehensive authentication options and best practices.**
+
+Connection parameters can be passed as CLI arguments and/or environment variables. The server supports all authentication methods available in the Snowflake Python Connector, including:
+
+- Username/password authentication
+- Key pair authentication
+- OAuth authentication
+- Single Sign-On (SSO)
+- Multi-factor authentication (MFA)
+
+### Connection Parameters
+
+Connection parameters can be passed as CLI arguments and/or environment variables:
 
 | Parameter | CLI Arguments | Environment Variable | Description |
 |-----------|--------------|---------------------|-------------|
-| Account | --account, --account-identifier | SNOWFLAKE_ACCOUNT | Account identifier (e.g. xy12345.us-east-1) |
+| Account | --account | SNOWFLAKE_ACCOUNT | Account identifier (e.g. xy12345.us-east-1) |
 | Host | --host | SNOWFLAKE_HOST | Snowflake host URL |
 | User | --user, --username | SNOWFLAKE_USER | Username for authentication |
-| Password/PAT | --password, --pat | SNOWFLAKE_PASSWORD, SNOWFLAKE_PAT | Password or programmatic access token |
+| Password | --password | SNOWFLAKE_PASSWORD | Password or programmatic access token |
 | Role | --role | SNOWFLAKE_ROLE | Role to use for connection |
 | Warehouse | --warehouse | SNOWFLAKE_WAREHOUSE | Warehouse to use for queries |
 | Passcode in Password | --passcode-in-password | - | Whether passcode is embedded in password |
@@ -62,7 +74,10 @@ Connections to Snowflake in the MCP serverare initiated via the [Snowflake Pytho
 | Private Key File | --private-key-file | SNOWFLAKE_PRIVATE_KEY_FILE | Path to private key file |
 | Private Key Password | --private-key-pwd | SNOWFLAKE_PRIVATE_KEY_PWD | Password for encrypted private key |
 | Authenticator | --authenticator | - | Authentication type (default: snowflake) |
-| Connection Name | --connection-name | - | Optional name for the connection |
+| Connection Name | --connection-name | - | Name of connection from connections.toml (or config.toml) file |
+
+> [!WARNING]
+> **Deprecation Notice**: The CLI arguments `--account-identifier` and `--pat`, as well as the environment variable `SNOWFLAKE_PAT`, are deprecated and will be removed in a future release. Please use `--account` and `--password` (or `SNOWFLAKE_ACCOUNT` and `SNOWFLAKE_PASSWORD`) instead.
 
 # Using with MCP Clients
 
@@ -73,7 +88,7 @@ To integrate this server with Claude Desktop as the MCP Client, add the followin
 - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
 - Windows: %APPDATA%\Claude\claude_desktop_config.json
 
-Set the path to the service configuration file and values for environment variables SNOWFLAKE_PASSWORD, SNOWFLAKE_ACCOUNT, and SNOWFLAKE_USER.
+Set the path to the service configuration file and configure your connection method.
 
 ```
 {
@@ -85,13 +100,10 @@ Set the path to the service configuration file and values for environment variab
         "git+https://github.com/Snowflake-Labs/mcp",
         "mcp-server-snowflake",
         "--service-config-file",
-        "<path to file>/tools_config.yaml"
-      ],
-      "env": {
-        "SNOWFLAKE_PASSWORD": "<snowflake-password>",
-        "SNOWFLAKE_ACCOUNT": "<account-identifier>",
-        "SNOWFLAKE_USER": "<username>"
-      }
+        "<path to file>/tools_config.yaml",
+        "--connection-name",
+        "default"
+      ]
     }
   }
 }
@@ -109,12 +121,8 @@ Register the MCP server in cursor by opening Cursor and navigating to Settings -
         "mcp-server-snowflake",
         "--service-config-file",
         "<path to file>/tools_config.yaml",
-        "--account-identifier",
-        "<account-identifier>",
-        "--username",
-        "<username>",
-        "--password",
-        "<snowflake-password>"
+        "--connection-name",
+        "default"
       ]
     }
   }
@@ -129,25 +137,14 @@ For troubleshooting Cursor server issues, view the logs by opening the Output pa
 
 ## [fast-agent](https://fast-agent.ai/)
 
-Update the `fastagent.config.yaml` mcp server section with an updated path to the configuration file.
+Update the `fastagent.config.yaml` mcp server section with the configuration file path and connection name.
 ```
 # MCP Servers
 mcp:
     servers:
         mcp-server-snowflake:
             command: "uvx"
-            args: ["--from", "git+https://github.com/Snowflake-Labs/mcp", "mcp-server-snowflake", "--service-config-file", "<path to file>/tools_config.yaml"]
-```
-
-Update the `fastagent.secrets.yaml` mcp server section with environment variables.
-```
-mcp:
-    servers:
-        mcp-server-snowflake:
-            env:
-                SNOWFLAKE_PASSWORD: <snowflake-password>
-                SNOWFLAKE_ACCOUNT: <snowflake-account-identifier>
-                SNOWFLAKE_USER: <snowflake-username>
+            args: ["--from", "git+https://github.com/Snowflake-Labs/mcp", "mcp-server-snowflake", "--service-config-file", "<path to file>/tools_config.yaml", "--connection-name", "default"]
 ```
 
 <img src="https://sfquickstarts.s3.us-west-1.amazonaws.com/misc/mcp/fast-agent.gif" width="800"/>
@@ -162,9 +159,9 @@ For prerequisites, environment setup, step-by-step guide and instructions, pleas
 
 ## Running MCP Inspector
 
-MCP Inspector is suggested for troubleshooting the MCP server. Run the below to launch the inspector. Be sure to set values for service config file, SNOWFLAKE_ACCOUNT, SNOWFLAKE_USER, and SNOWFLAKE_PASSWORD are set accordingly.
+The [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) is suggested for troubleshooting the MCP server. Run the below to launch the inspector.
 
-`npx @modelcontextprotocol/inspector uvx --from "git+https://github.com/Snowflake-Labs/mcp" mcp-server-snowflake --service-config-file "<path_to_file>/tools_config.yaml" --account-identifier $SNOWFLAKE_ACCOUNT --username $SNOWFLAKE_USER --password $SNOWFLAKE_PASSWORD`
+`npx @modelcontextprotocol/inspector uvx --from "git+https://github.com/Snowflake-Labs/mcp" mcp-server-snowflake --service-config-file "<path_to_file>/tools_config.yaml" --connection-name "default"`
 
 # FAQs
 
@@ -175,7 +172,7 @@ See [Connecting to Snowflake with the Python Connector](https://docs.snowflake.c
 
 #### Can I use a Programmatic Access Token (PAT) instead of a password?
 
-- Yes. Pass it to either CLI flag --password or --pat or set as environment variable SNOWFLAKE_PASSWORD or SNOWFLAKE_PAT.
+- Yes. Pass it to the CLI flag --password or set as environment variable SNOWFLAKE_PASSWORD.
 
 #### How do I try this?
 

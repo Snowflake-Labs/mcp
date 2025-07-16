@@ -27,11 +27,11 @@ variables and uses a YAML configuration file to define service specifications.
 Environment Variables
 ---------------------
 SNOWFLAKE_ACCOUNT : str
-    Snowflake account identifier (alternative to --account-identifier)
+    Snowflake account identifier (alternative to --account)
 SNOWFLAKE_USER : str
     Snowflake username (alternative to --username)
-SNOWFLAKE_PAT : str
-    Programmatic Access Token (alternative to --pat)
+SNOWFLAKE_PASSWORD : str
+    Password or Programmatic Access Token (alternative to --password)
 SERVICE_CONFIG_FILE : str
     Path to service configuration file (alternative to --service-config-file)
 """

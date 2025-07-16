@@ -385,13 +385,13 @@ def get_var(var_name: str, env_var_name: str, args) -> Optional[str]:
     --------
     Get account identifier from args or environment:
 
-    >>> args = parser.parse_args(["--account-identifier", "myaccount"])
-    >>> get_var("account_identifier", "SNOWFLAKE_ACCOUNT", args)
+    >>> args = parser.parse_args(["--account", "myaccount"])
+    >>> get_var("account", "SNOWFLAKE_ACCOUNT", args)
     'myaccount'
 
     >>> os.environ["SNOWFLAKE_ACCOUNT"] = "myaccount"
     >>> args = parser.parse_args([])
-    >>> get_var("account_identifier", "SNOWFLAKE_ACCOUNT", args)
+    >>> get_var("account", "SNOWFLAKE_ACCOUNT", args)
     'myaccount'
     """
 
@@ -417,8 +417,8 @@ def create_snowflake_service():
     Raises
     ------
     MissingArgumentException
-        If required parameters (account_identifier and pat) are not provided
-        through either command line arguments or environment variables
+        If required parameters are not provided through either command line
+        arguments or environment variables
     SystemExit
         If argument parsing fails or help is requested
 
