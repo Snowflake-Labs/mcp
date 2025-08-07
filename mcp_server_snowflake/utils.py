@@ -11,6 +11,7 @@
 # limitations under the License.
 import json
 import logging
+import os
 import re
 from functools import wraps
 from textwrap import dedent
@@ -134,7 +135,6 @@ class SnowflakeResponse:
             If connection fails or SQL execution encounters an error
         """
         # Forward any remaining kwargs to get_connection
-        # with service.get_connection(use_dict_cursor=True, **kwargs) as (
         with service.get_connection(
             use_dict_cursor=True, session_parameters=service.get_query_tag_param()
         ) as (
@@ -395,3 +395,58 @@ async def load_tools_config_resource(file_path: str) -> str:
         tools_config = yaml.safe_load(file)
 
     return json.dumps(tools_config)
+
+
+def get_login_params() -> dict:
+    """
+    Get Snowflake login parameters configuration.
+
+    Returns a dictionary mapping Snowflake connection parameter names to their
+    corresponding command line argument names and default values from environment
+    variables.
+
+    Returns
+    -------
+    dict
+        Dictionary with structure {param_name: [arg_names, default_value]}
+        where arg_names are the command line argument flags and default_value
+        is pulled from environment variables
+
+    Examples
+    --------
+    >>> params = get_login_params()
+    >>> params["account"]
+    ['--account', '--account-identifier', os.getenv("SNOWFLAKE_ACCOUNT")]
+    """
+    # Dict of login params supported by snowflake connector api to establish connection
+    # {Key value name : [argparse argument name, default value]}
+    login_params = {  # TODO: Add help for each argument
+        "account": [
+            "--account",
+            "--account-identifier",
+            os.getenv("SNOWFLAKE_ACCOUNT"),
+        ],
+        "host": ["--host", os.getenv("SNOWFLAKE_HOST")],
+        "user": ["--user", "--username", os.getenv("SNOWFLAKE_USER")],
+        "password": [
+            "--password",
+            "--pat",
+            os.getenv("SNOWFLAKE_PASSWORD") or os.getenv("SNOWFLAKE_PAT"),
+        ],
+        "role": ["--role", os.getenv("SNOWFLAKE_ROLE")],
+        "warehouse": ["--warehouse", os.getenv("SNOWFLAKE_WAREHOUSE")],
+        "passcode_in_password": ["--passcode-in-password", False],
+        "passcode": ["--passcode", os.getenv("SNOWFLAKE_PASSCODE")],
+        "private_key": ["--private-key", os.getenv("SNOWFLAKE_PRIVATE_KEY")],
+        "private_key_file": [
+            "--private-key-file",
+            os.getenv("SNOWFLAKE_PRIVATE_KEY_FILE"),
+        ],
+        "private_key_pwd": [
+            "--private-key-pwd",
+            os.getenv("SNOWFLAKE_PRIVATE_KEY_PWD"),
+        ],
+        "authenticator": ["--authenticator", "snowflake"],
+        "connection_name": ["--connection-name", None],
+    }
+    return login_params
