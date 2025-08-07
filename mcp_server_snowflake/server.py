@@ -410,7 +410,9 @@ def parse_arguments():
     login_params = get_login_params()
 
     for value in login_params.values():
-        parser.add_argument(*value[:-1], required=False, default=value[-1])
+        parser.add_argument(
+            *value[:-2], required=False, default=value[-2], help=value[-1]
+        )
 
     parser.add_argument(
         "--service-config-file",

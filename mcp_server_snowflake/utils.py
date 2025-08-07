@@ -416,37 +416,91 @@ def get_login_params() -> dict:
     --------
     >>> params = get_login_params()
     >>> params["account"]
-    ['--account', '--account-identifier', os.getenv("SNOWFLAKE_ACCOUNT")]
+    ['--account', '--account-identifier', os.getenv("SNOWFLAKE_ACCOUNT"), "Your account identifier."]
     """
     # Dict of login params supported by snowflake connector api to establish connection
-    # {Key value name : [argparse argument name, default value]}
+    # {Key value name : [argparse argument name(s), default value, help]}
+    # Each argument can have 1-2 flag values. All arguments must have a default value and help.
     login_params = {  # TODO: Add help for each argument
         "account": [
             "--account",
             "--account-identifier",
             os.getenv("SNOWFLAKE_ACCOUNT"),
+            "Your account identifier. The account identifier does not include the snowflakecomputing.com suffix.",
         ],
-        "host": ["--host", os.getenv("SNOWFLAKE_HOST")],
-        "user": ["--user", "--username", os.getenv("SNOWFLAKE_USER")],
+        "host": ["--host", os.getenv("SNOWFLAKE_HOST"), "Host name."],
+        "user": [
+            "--user",
+            "--username",
+            os.getenv("SNOWFLAKE_USER"),
+            "Login name for the user.",
+        ],
         "password": [
             "--password",
             "--pat",
             os.getenv("SNOWFLAKE_PASSWORD") or os.getenv("SNOWFLAKE_PAT"),
+            "Password for the user.",
         ],
-        "role": ["--role", os.getenv("SNOWFLAKE_ROLE")],
-        "warehouse": ["--warehouse", os.getenv("SNOWFLAKE_WAREHOUSE")],
-        "passcode_in_password": ["--passcode-in-password", False],
-        "passcode": ["--passcode", os.getenv("SNOWFLAKE_PASSCODE")],
-        "private_key": ["--private-key", os.getenv("SNOWFLAKE_PRIVATE_KEY")],
+        "role": [
+            "--role",
+            os.getenv("SNOWFLAKE_ROLE"),
+            "Name of the default role to use.",
+        ],
+        "warehouse": [
+            "--warehouse",
+            os.getenv("SNOWFLAKE_WAREHOUSE"),
+            "Name of the default warehouse to use.",
+        ],
+        "passcode_in_password": [
+            "--passcode-in-password",
+            False,
+            "False by default. Set this to True if the MFA (Multi-Factor Authentication) passcode is embedded in the login password.",
+        ],
+        "passcode": [
+            "--passcode",
+            os.getenv("SNOWFLAKE_PASSCODE"),
+            "The passcode provided by Duo when using MFA (Multi-Factor Authentication) for login.",
+        ],
+        "private_key": [
+            "--private-key",
+            os.getenv("SNOWFLAKE_PRIVATE_KEY"),
+            "The private key used for authentication.",
+        ],
         "private_key_file": [
             "--private-key-file",
             os.getenv("SNOWFLAKE_PRIVATE_KEY_FILE"),
+            "Specifies the path to the private key file for the specified user.",
         ],
         "private_key_pwd": [
             "--private-key-pwd",
             os.getenv("SNOWFLAKE_PRIVATE_KEY_PWD"),
+            "Specifies the passphrase to decrypt the private key file for the specified user.",
         ],
-        "authenticator": ["--authenticator", "snowflake"],
-        "connection_name": ["--connection-name", None],
+        "authenticator": [
+            "--authenticator",
+            "snowflake",
+            """Authenticator for Snowflake:
+
+snowflake (default) to use the internal Snowflake authenticator.
+
+externalbrowser to authenticate using your web browser and Okta, AD FS, or any other SAML 2.0-compliant identity provider (IdP) that has been defined for your account.
+
+https://<okta_account_name>.okta.com (i.e. the URL endpoint for your Okta account) to authenticate through native Okta.
+
+oauth to authenticate using OAuth. You must also specify the token parameter and set its value to the OAuth access token.
+
+username_password_mfa to authenticate with MFA token caching. For more details, see Using MFA token caching to minimize the number of prompts during authentication — optional.
+
+OAUTH_AUTHORIZATION_CODE to use the OAuth 2.0 Authorization Code flow.
+
+OAUTH_CLIENT_CREDENTIALS to use the OAuth 2.0 Client Credentials flow.
+
+If the value is not snowflake, the user and password parameters must be your login credentials for the IdP.""",
+        ],
+        "connection_name": [
+            "--connection-name",
+            None,
+            "Name of the connection in Snowflake configuration file to use.",
+        ],
     }
     return login_params
