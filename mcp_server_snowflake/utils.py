@@ -135,7 +135,6 @@ class SnowflakeResponse:
             If connection fails or SQL execution encounters an error
         """
         # Forward any remaining kwargs to get_connection
-        # with service.get_connection(use_dict_cursor=True, **kwargs) as (
         with service.get_connection(
             use_dict_cursor=True, session_parameters=service.get_query_tag_param()
         ) as (
