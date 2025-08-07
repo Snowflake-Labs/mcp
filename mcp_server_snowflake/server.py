@@ -438,8 +438,6 @@ def create_lifespan(args):
         """
         Create main entry point for the Snowflake MCP server package.
 
-
-
         Uses pre-parsed command line arguments to create and configure the Snowflake service.
         """
         connection_params = {
