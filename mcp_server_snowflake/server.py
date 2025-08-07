@@ -29,7 +29,6 @@ from mcp_server_snowflake.environment import (
     is_running_in_spcs_container,
 )
 from mcp_server_snowflake.utils import (
-    MissingArgumentsException,
     cleanup_snowflake_service,
     get_login_params,
     load_tools_config_resource,
@@ -404,10 +403,6 @@ def get_var(var_name: str, env_var_name: str, args) -> Optional[str]:
     return None
 
 
-# Global variables to store configuration
-_parsed_args = None
-
-
 def parse_arguments():
     """Parse command line arguments once at startup."""
     parser = argparse.ArgumentParser(description="Snowflake MCP Server")
@@ -433,54 +428,55 @@ def parse_arguments():
     return parser.parse_args()
 
 
-@asynccontextmanager
-async def create_snowflake_service(server: FastMCP) -> AsyncIterator[SnowflakeService]:
-    """
-    Create main entry point for the Snowflake MCP server package.
+def create_lifespan(args):
+    """Create a lifespan function with captured arguments."""
 
-    Uses pre-parsed command line arguments to create and configure the Snowflake service.
-    """
-    if not _parsed_args:
-        raise RuntimeError("Arguments must be parsed before creating the service")
+    @asynccontextmanager
+    async def create_snowflake_service(
+        server: FastMCP,
+    ) -> AsyncIterator[SnowflakeService]:
+        """
+        Create main entry point for the Snowflake MCP server package.
 
-    args = _parsed_args
-    connection_params = {
-        key: getattr(args, key)
-        for key in get_login_params().keys()
-        if getattr(args, key) is not None
-    }
-    service_config_file = get_var("service_config_file", "SERVICE_CONFIG_FILE", args)
 
-    if not service_config_file:
-        raise MissingArgumentsException(missing=["service_config_file"]) from None
 
-    snowflake_service = None
-    try:
-        snowflake_service = SnowflakeService(
-            service_config_file=service_config_file,
-            transport=args.transport,
-            connection_params=connection_params,
+        Uses pre-parsed command line arguments to create and configure the Snowflake service.
+        """
+        connection_params = {
+            key: getattr(args, key)
+            for key in get_login_params().keys()
+            if getattr(args, key) is not None
+        }
+        service_config_file = get_var(
+            "service_config_file", "SERVICE_CONFIG_FILE", args
         )
 
-        # Initialize tools and resources now that we have the service
-        logger.info("Initializing tools and resources...")
-        initialize_tools(snowflake_service)
-        initialize_resources(snowflake_service)
+        snowflake_service = None
+        try:
+            snowflake_service = SnowflakeService(
+                service_config_file=service_config_file,
+                transport=args.transport,
+                connection_params=connection_params,
+            )
 
-        yield snowflake_service
-    except Exception as e:
-        logger.error(f"Error creating Snowflake service: {e}")
-        raise
+            # Initialize tools and resources now that we have the service
+            logger.info("Initializing tools and resources...")
+            initialize_tools(snowflake_service, server)
+            initialize_resources(snowflake_service, server)
 
-    finally:
-        if snowflake_service is not None:
-            cleanup_snowflake_service(snowflake_service)
+            yield snowflake_service
+        except Exception as e:
+            logger.error(f"Error creating Snowflake service: {e}")
+            raise
+
+        finally:
+            if snowflake_service is not None:
+                cleanup_snowflake_service(snowflake_service)
+
+    return create_snowflake_service
 
 
-server = FastMCP("Snowflake MCP Server", lifespan=create_snowflake_service)
-
-
-def initialize_resources(snowflake_service: SnowflakeService):
+def initialize_resources(snowflake_service: SnowflakeService, server: FastMCP):
     @server.resource(snowflake_service.config_path_uri)
     async def get_tools_config():
         """
@@ -494,7 +490,7 @@ def initialize_resources(snowflake_service: SnowflakeService):
         return json.loads(tools_config)
 
 
-def initialize_tools(snowflake_service: SnowflakeService):
+def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
     if snowflake_service is not None:
         # Add tools for each configured search service
         if snowflake_service.search_services:
@@ -531,22 +527,23 @@ def initialize_tools(snowflake_service: SnowflakeService):
 
 
 def main():
-    global _parsed_args
-    _parsed_args = parse_arguments()
+    args = parse_arguments()
+
+    # Create server with lifespan that has access to args
+    server = FastMCP("Snowflake MCP Server", lifespan=create_lifespan(args))
+
     try:
         logger.info("Starting Snowflake MCP Server...")
 
-        if _parsed_args.transport and _parsed_args.transport in [
+        if args.transport and args.transport in [
             "sse",
             "streamable-http",
         ]:
-            logger.info(f"Starting server with transport: {_parsed_args.transport}")
-            server.run(transport=_parsed_args.transport, host="0.0.0.0", port=9000)
+            logger.info(f"Starting server with transport: {args.transport}")
+            server.run(transport=args.transport, host="0.0.0.0", port=9000)
         else:
-            logger.info(
-                f"Starting server with transport: {_parsed_args.transport or 'stdio'}"
-            )
-            server.run(transport=_parsed_args.transport or "stdio")
+            logger.info(f"Starting server with transport: {args.transport or 'stdio'}")
+            server.run(transport=args.transport or "stdio")
 
     except Exception as e:
         logger.error(f"Error starting MCP server: {e}")
