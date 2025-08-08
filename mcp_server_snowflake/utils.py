@@ -444,12 +444,12 @@ def get_login_params() -> dict:
         "role": [
             "--role",
             os.getenv("SNOWFLAKE_ROLE"),
-            "Name of the default role to use.",
+            "Name of the role to use.",
         ],
         "warehouse": [
             "--warehouse",
             os.getenv("SNOWFLAKE_WAREHOUSE"),
-            "Name of the default warehouse to use.",
+            "Name of the warehouse to use.",
         ],
         "passcode_in_password": [
             "--passcode-in-password",
