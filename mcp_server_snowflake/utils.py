@@ -499,7 +499,7 @@ If the value is not snowflake, the user and password parameters must be your log
         ],
         "connection_name": [
             "--connection-name",
-            None,
+            os.getenv("SNOWFLAKE_DEFAULT_CONNECTION_NAME", "default"),
             "Name of the connection in Snowflake configuration file to use.",
         ],
     }
