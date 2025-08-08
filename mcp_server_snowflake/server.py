@@ -240,6 +240,16 @@ class SnowflakeService:
                 logger.info("Using external authentication")
                 connection_params = self.connection_params.copy()
 
+            # We are passing session_parameters and client_session_keep_alive
+            # so we cannot rely on the connection to infer default connection name.
+            # So instead, if no expliit values passed via CLI, we replicate the same logic here
+            if not connection_params:
+                connection_params = {
+                    "connection_name": os.getenv(
+                        "SNOWFLAKE_DEFAULT_CONNECTION_NAME", "default"
+                    ),
+                }
+
             connection = connect(
                 **connection_params,
                 session_parameters=session_parameters,
