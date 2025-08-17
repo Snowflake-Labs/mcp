@@ -29,11 +29,7 @@ from mcp_server_snowflake.environment import (
     get_spcs_container_token,
     is_running_in_spcs_container,
 )
-from mcp_server_snowflake.object_manager.objects import (
-    SnowflakeClasses,
-    create_object,
-    drop_object,
-)
+from mcp_server_snowflake.object_manager.tools import initialize_object_manager_tools
 from mcp_server_snowflake.utils import (
     cleanup_snowflake_service,
     get_login_params,
@@ -509,16 +505,8 @@ def initialize_resources(snowflake_service: SnowflakeService, server: FastMCP):
 
 def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
     if snowflake_service is not None:
-        for object_type in SnowflakeClasses:
-            object_name = object_type.__name__.lower().replace("snowflake", "").lower()
-
-            @server.tool(name=f"create_{object_name}")
-            def create_object_tool(object_type: object_type):  # type: ignore
-                return create_object(object_type, snowflake_service.root)
-
-            @server.tool(name=f"drop_{object_name}")
-            def drop_object_tool(object_type: object_type):  # type: ignore
-                return drop_object(object_type, snowflake_service.root)
+        # Add tools for object manager
+        initialize_object_manager_tools(server, snowflake_service.root)
 
         # Add tools for each configured search service
         if snowflake_service.search_services:
