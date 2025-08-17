@@ -263,6 +263,8 @@ class SnowflakeException(Exception):
     Provides enhanced error handling for Snowflake Cortex API operations
     with specific error messages based on HTTP status codes and error types.
 
+    Also used for non-API tooling errors. Omit status_code for these errors.
+
     Parameters
     ----------
     tool : str
@@ -278,7 +280,7 @@ class SnowflakeException(Exception):
         The Cortex service that generated the error
     message : str
         Original error message from the API
-    status_code : int
+    status_code : int|None
         HTTP status code associated with the error
 
     Methods
@@ -320,16 +322,20 @@ class SnowflakeException(Exception):
         - 401: Authorization/authentication errors
         - Other codes: Generic error with status code
         """
-        if self.status_code == 400:
-            if "unknown model" in self.message:
-                return f"{self.tool} Error: Selected model not available or invalid.\n\nError Message: {self.message} "
-            else:
-                return f"{self.tool} Error: The resource cannot be found.\n\nError Message: {self.message} "
+        if self.status_code is None:
+            return f"{self.tool} Error: An error has occurred.\n\nError Message: {self.message} "
 
-        elif self.status_code == 401:
-            return f"{self.tool} Error: An authorization error occurred.\n\nError Message: {self.message} "
         else:
-            return f"{self.tool} Error: An error has occurred.\n\nError Message: {self.message} \n Code: {self.status_code}"
+            if self.status_code == 400:
+                if "unknown model" in self.message:
+                    return f"{self.tool} Error: Selected model not available or invalid.\n\nError Message: {self.message} "
+                else:
+                    return f"{self.tool} Error: The resource cannot be found.\n\nError Message: {self.message} "
+
+            elif self.status_code == 401:
+                return f"{self.tool} Error: An authorization error occurred.\n\nError Message: {self.message} "
+            else:
+                return f"{self.tool} Error: An error has occurred.\n\nError Message: {self.message} \n Code: {self.status_code}"
 
 
 class MissingArgumentsException(Exception):
