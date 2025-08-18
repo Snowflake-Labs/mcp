@@ -1,6 +1,7 @@
+import json
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from snowflake.core import Root
 from snowflake.core.database import Database
 from snowflake.core.schema import Schema
@@ -17,6 +18,20 @@ class ObjectMetadata(BaseModel):
         default=None, description="The description of the object"
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def parse_json_string(cls, data):
+        """
+        Automatically parse JSON strings when creating instances.
+        This allows passing either a dict or a JSON string to any ObjectMetadata subclass.
+        """
+        if isinstance(data, str):
+            try:
+                return json.loads(data)
+            except json.JSONDecodeError as e:
+                raise ValueError(f"Invalid JSON string: {e}")
+        return data
+
 
 class SnowflakeDatabase(ObjectMetadata):
     kind: Literal["PERMANENT", "TRANSIENT"] = Field(
@@ -27,11 +42,6 @@ class SnowflakeDatabase(ObjectMetadata):
         return Database.from_dict(self.__dict__)
 
     def get_core_path(self, root: Root):
-        # core_object = self.get_core_object()
-        # if isinstance(core_object, Database):
-        #     return root.databases
-        # else:
-        #     raise ValueError(f"Invalid object type: {self}")
         return root.databases
 
 
@@ -45,11 +55,6 @@ class SnowflakeSchema(ObjectMetadata):
         return Schema.from_dict(self.__dict__)
 
     def get_core_path(self, root: Root):
-        # core_object = self.get_core_object()
-        # if isinstance(core_object, Schema):
-        #     return root.databases[self.database_name].schemas
-        # else:
-        #     raise ValueError(f"Invalid object type: {self}")
         return root.databases[self.database_name].schemas
 
 
@@ -73,12 +78,7 @@ class SnowflakeTable(ObjectMetadata):
         return Table.from_dict(self.__dict__)
 
     def get_core_path(self, root: Root):
-        # core_object = self.get_core_object()
-        # if isinstance(core_object, Table):
-        #     return root.databases[self.database_name].schemas[self.schema_name].tables
-        # else:
-        #     raise ValueError(f"Invalid object type: {self}")
-        root.databases[self.database_name].schemas[self.schema_name].tables
+        return root.databases[self.database_name].schemas[self.schema_name].tables
 
 
 class SnowflakeWarehouse(ObjectMetadata):
@@ -99,10 +99,10 @@ class SnowflakeWarehouse(ObjectMetadata):
         default=None,
         description="The number of minutes of inactivity before the warehouse is automatically suspended",
     )
-    auto_resume: bool = Field(
+    auto_resume: Literal["true", "false"] = Field(
         default=None, description="Whether the warehouse is automatically resumed"
     )
-    initially_suspended: bool = Field(
+    initially_suspended: Literal["true", "false"] = Field(
         default=None, description="Whether the warehouse is initially suspended"
     )
 
@@ -110,11 +110,6 @@ class SnowflakeWarehouse(ObjectMetadata):
         return Warehouse.from_dict(self.__dict__)
 
     def get_core_path(self, root: Root):
-        # core_object = self.get_core_object()
-        # if isinstance(core_object, Warehouse):
-        #     return root.warehouses
-        # else:
-        #     raise ValueError(f"Invalid object type: {self}")
         return root.warehouses
 
 

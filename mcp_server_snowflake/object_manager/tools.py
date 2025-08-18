@@ -54,21 +54,24 @@ def describe_object(object_type: ObjectMetadata, root: Root):
 def list_objects(object_type: ObjectMetadata, root: Root, like: str = None):
     core_path = object_type.get_core_path(root=root)
     try:
-        return core_path.iter(like=like, limit=100)
+        # Try with limit first (works for most object types)
+        try:
+            return core_path.iter(like=like, limit=100)
+        except TypeError:
+            # Fall back to no limit for object types that don't support it (like warehouses)
+            return core_path.iter(like=like)
     except Exception as e:
         raise SnowflakeException(tool="list_objects", message=e)
 
 
 def initialize_object_manager_tools(server: FastMCP, root: Root):
-    for object_type in SnowflakeClasses:
-        object_name = object_type.__name__.lower().replace("snowflake", "").lower()
-
-        @server.tool(name=f"create_{object_name}")
+    # Create a closure that captures the current object_type
+    def create_tools_for_type(obj_type, obj_name):
+        @server.tool(name=f"create_{obj_name}")
         def create_object_tool(
-            # fastMCP will automatically parse the input_schema from object_type Pydantic model from the request
-            # However, some models are still passing strings instead of object so we must handle that to avoid Pydantic errors
+            # Allow both object and string inputs - Pydantic model will handle JSON string parsing
             target_object: Annotated[
-                object_type | str,
+                obj_type | str,
                 Field(
                     description="Always pass properties of target_object as an object, not a string"
                 ),
@@ -77,59 +80,71 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
                 "error_if_exists", "replace", "if_not_exists"
             ] = "error_if_exists",
         ):
+            # If string is passed, parse JSON and create object
             if isinstance(target_object, str):
                 try:
-                    target_object = object_type(**json.loads(target_object))
+                    parsed_data = json.loads(target_object)
+                    target_object = obj_type(**parsed_data)
                 except Exception as e:
-                    raise SnowflakeException(tool="create_object", message=e)
+                    raise SnowflakeException(tool=f"create_{obj_name}", message=e)
             return create_object(target_object, root, mode)
 
-        @server.tool(name=f"drop_{object_name}")
+        @server.tool(name=f"drop_{obj_name}")
         def drop_object_tool(
-            target_object: object_type | str,
+            target_object: Annotated[
+                obj_type | str,
+                Field(
+                    description="Always pass properties of target_object as an object, not a string"
+                ),
+            ],
             if_exists: bool = False,
         ):
             if isinstance(target_object, str):
                 try:
-                    target_object = object_type(**json.loads(target_object))
+                    parsed_data = json.loads(target_object)
+                    target_object = obj_type(**parsed_data)
                 except Exception as e:
-                    raise SnowflakeException(tool="drop_object", message=e)
-            return drop_object(target_object, root, if_exists)
+                    raise SnowflakeException(tool=f"drop_{obj_name}", message=e)
+            drop_object(target_object, root, if_exists)
+            return f"Dropped {obj_name} {target_object.name}."
 
-        @server.tool(name=f"describe_{object_name}")
+        @server.tool(name=f"describe_{obj_name}")
         def describe_object_tool(
-            target_object: object_type | str,
+            target_object: Annotated[
+                obj_type | str,
+                Field(
+                    description="Always pass properties of target_object as an object, not a string"
+                ),
+            ],
         ):
             if isinstance(target_object, str):
                 try:
-                    target_object = object_type(**json.loads(target_object))
+                    parsed_data = json.loads(target_object)
+                    target_object = obj_type(**parsed_data)
                 except Exception as e:
-                    raise SnowflakeException(tool="describe_object", message=e)
+                    raise SnowflakeException(tool=f"describe_{obj_name}", message=e)
             return describe_object(target_object, root)
 
-        @server.tool(name=f"list_{object_name}s")
+        @server.tool(name=f"list_{obj_name}s")
         def list_objects_tool(
-            target_object: object_type | str,
+            target_object: Annotated[
+                obj_type | str,
+                Field(
+                    description="Always pass properties of target_object as an object, not a string"
+                ),
+            ],
             like: str | None = None,
         ):
             if isinstance(target_object, str):
                 try:
-                    target_object = object_type(**json.loads(target_object))
+                    parsed_data = json.loads(target_object)
+                    target_object = obj_type(**parsed_data)
                 except Exception as e:
-                    raise SnowflakeException(tool="list_objects", message=e)
+                    raise SnowflakeException(tool=f"list_{obj_name}s", message=e)
             return list_objects(target_object, root, like)
 
-    # @server.tool(name="hello world")
-    # def x(
-    #     # fastMCP will automatically parse the input_schema from object_type Pydantic model from the request
-    #     object_type: SnowflakeWarehouse | str,
-    #     mode: Literal[
-    #         "error_if_exists", "replace", "if_not_exists"
-    #     ] = "error_if_exists",
-    # ):
-    #     if isinstance(object_type, str):
-    #         try:
-    #             object_type = SnowflakeWarehouse(**json.loads(object_type))
-    #         except Exception as e:
-    #             raise SnowflakeException(tool="hello world", message=e)
-    #     return create_object(object_type, root, mode)
+    for object_type in SnowflakeClasses:
+        object_name = object_type.__name__.lower().replace("snowflake", "")
+
+        # Call the closure to create tools for this specific type
+        create_tools_for_type(object_type, object_name)
