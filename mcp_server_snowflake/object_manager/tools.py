@@ -102,5 +102,8 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
         ] = "error_if_exists",
     ):
         if isinstance(object_type, str):
-            object_type = json.loads(object_type)
+            try:
+                object_type = object_type(**json.loads(object_type))
+            except Exception as e:
+                raise SnowflakeException(tool="hello world", message=e)
         return create_object(object_type, root, mode)
