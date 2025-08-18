@@ -1,7 +1,8 @@
 import json
-from typing import Literal
+from typing import Annotated, Literal
 
 from fastmcp import FastMCP
+from pydantic import Field
 from snowflake.core import CreateMode, Root
 
 from mcp_server_snowflake.object_manager.objects import (
@@ -66,7 +67,12 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
         def create_object_tool(
             # fastMCP will automatically parse the input_schema from object_type Pydantic model from the request
             # However, some models are still passing strings instead of object so we must handle that to avoid Pydantic errors
-            target_object: object_type | str,
+            target_object: Annotated[
+                object_type | str,
+                Field(
+                    description="Always pass properties of target_object as an object, not a string"
+                ),
+            ],
             mode: Literal[
                 "error_if_exists", "replace", "if_not_exists"
             ] = "error_if_exists",
