@@ -14,7 +14,7 @@ from typing import Annotated, Optional
 import requests
 from pydantic import Field
 
-import mcp_server_snowflake.prompts as prompts
+import mcp_server_snowflake.cortex_services.prompts as prompts
 from mcp_server_snowflake.environment import construct_snowflake_post
 from mcp_server_snowflake.utils import SnowflakeException, SnowflakeResponse
 

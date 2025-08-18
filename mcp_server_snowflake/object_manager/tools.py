@@ -9,6 +9,12 @@ from mcp_server_snowflake.object_manager.objects import (
     ObjectMetadata,
     SnowflakeClasses,
 )
+from mcp_server_snowflake.object_manager.prompts import (
+    create_object_prompt,
+    describe_object_prompt,
+    drop_object_prompt,
+    list_objects_prompt,
+)
 from mcp_server_snowflake.utils import SnowflakeException
 
 
@@ -67,7 +73,10 @@ def list_objects(object_type: ObjectMetadata, root: Root, like: str = None):
 def initialize_object_manager_tools(server: FastMCP, root: Root):
     # Create a closure that captures the current object_type
     def create_tools_for_type(obj_type, obj_name):
-        @server.tool(name=f"create_{obj_name}")
+        @server.tool(
+            name=f"create_{obj_name}",
+            description=create_object_prompt(obj_name),
+        )
         def create_object_tool(
             # Allow both object and string inputs - Pydantic model will handle JSON string parsing
             target_object: Annotated[
@@ -89,7 +98,10 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
                     raise SnowflakeException(tool=f"create_{obj_name}", message=e)
             return create_object(target_object, root, mode)
 
-        @server.tool(name=f"drop_{obj_name}")
+        @server.tool(
+            name=f"drop_{obj_name}",
+            description=drop_object_prompt(obj_name),
+        )
         def drop_object_tool(
             target_object: Annotated[
                 obj_type | str,
@@ -108,7 +120,10 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
             drop_object(target_object, root, if_exists)
             return f"Dropped {obj_name} {target_object.name}."
 
-        @server.tool(name=f"describe_{obj_name}")
+        @server.tool(
+            name=f"describe_{obj_name}",
+            description=describe_object_prompt(obj_name),
+        )
         def describe_object_tool(
             target_object: Annotated[
                 obj_type | str,
@@ -125,7 +140,10 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
                     raise SnowflakeException(tool=f"describe_{obj_name}", message=e)
             return describe_object(target_object, root)
 
-        @server.tool(name=f"list_{obj_name}s")
+        @server.tool(
+            name=f"list_{obj_name}s",
+            description=list_objects_prompt(obj_name),
+        )
         def list_objects_tool(
             target_object: Annotated[
                 obj_type | str,

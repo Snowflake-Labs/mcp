@@ -24,7 +24,7 @@ from fastmcp.tools import Tool
 from snowflake.connector import DictCursor, connect
 from snowflake.core import Root
 
-import mcp_server_snowflake.tools as tools
+import mcp_server_snowflake.cortex_services.tools as cortex_tools
 from mcp_server_snowflake.environment import (
     get_spcs_container_token,
     is_running_in_spcs_container,
@@ -511,7 +511,7 @@ def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
         # Add tools for each configured search service
         if snowflake_service.search_services:
             for service in snowflake_service.search_services:
-                search_wrapper = tools.create_search_wrapper(
+                search_wrapper = cortex_tools.create_search_wrapper(
                     snowflake_service=snowflake_service, service_details=service
                 )
                 server.add_tool(
@@ -527,7 +527,7 @@ def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
 
         if snowflake_service.analyst_services:
             for service in snowflake_service.analyst_services:
-                cortex_analyst_wrapper = tools.create_cortex_analyst_wrapper(
+                cortex_analyst_wrapper = cortex_tools.create_cortex_analyst_wrapper(
                     snowflake_service=snowflake_service, service_details=service
                 )
                 server.add_tool(
