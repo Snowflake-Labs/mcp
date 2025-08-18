@@ -7,7 +7,6 @@ from snowflake.core import CreateMode, Root
 from mcp_server_snowflake.object_manager.objects import (
     ObjectMetadata,
     SnowflakeClasses,
-    SnowflakeWarehouse,
 )
 from mcp_server_snowflake.utils import SnowflakeException
 
@@ -66,44 +65,65 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
         @server.tool(name=f"create_{object_name}")
         def create_object_tool(
             # fastMCP will automatically parse the input_schema from object_type Pydantic model from the request
-            object_type: object_type,  # type: ignore
+            # However, some models are still passing strings instead of object so we must handle that to avoid Pydantic errors
+            target_object: object_type | str,
             mode: Literal[
                 "error_if_exists", "replace", "if_not_exists"
             ] = "error_if_exists",
         ):
-            return create_object(object_type, root, mode)
+            if isinstance(target_object, str):
+                try:
+                    target_object = object_type(**json.loads(target_object))
+                except Exception as e:
+                    raise SnowflakeException(tool="create_object", message=e)
+            return create_object(target_object, root, mode)
 
         @server.tool(name=f"drop_{object_name}")
         def drop_object_tool(
-            object_type: object_type,  # type: ignore
+            target_object: object_type | str,
             if_exists: bool = False,
         ):
-            return drop_object(object_type, root, if_exists)
+            if isinstance(target_object, str):
+                try:
+                    target_object = object_type(**json.loads(target_object))
+                except Exception as e:
+                    raise SnowflakeException(tool="drop_object", message=e)
+            return drop_object(target_object, root, if_exists)
 
         @server.tool(name=f"describe_{object_name}")
         def describe_object_tool(
-            object_type: object_type,  # type: ignore
+            target_object: object_type | str,
         ):
-            return describe_object(object_type, root)
+            if isinstance(target_object, str):
+                try:
+                    target_object = object_type(**json.loads(target_object))
+                except Exception as e:
+                    raise SnowflakeException(tool="describe_object", message=e)
+            return describe_object(target_object, root)
 
         @server.tool(name=f"list_{object_name}s")
         def list_objects_tool(
-            object_type: object_type,  # type: ignore
+            target_object: object_type | str,
             like: str | None = None,
         ):
-            return list_objects(object_type, root, like)
+            if isinstance(target_object, str):
+                try:
+                    target_object = object_type(**json.loads(target_object))
+                except Exception as e:
+                    raise SnowflakeException(tool="list_objects", message=e)
+            return list_objects(target_object, root, like)
 
-    @server.tool(name="hello world")
-    def x(
-        # fastMCP will automatically parse the input_schema from object_type Pydantic model from the request
-        object_type: SnowflakeWarehouse | str,
-        mode: Literal[
-            "error_if_exists", "replace", "if_not_exists"
-        ] = "error_if_exists",
-    ):
-        if isinstance(object_type, str):
-            try:
-                object_type = SnowflakeWarehouse(**json.loads(object_type))
-            except Exception as e:
-                raise SnowflakeException(tool="hello world", message=e)
-        return create_object(object_type, root, mode)
+    # @server.tool(name="hello world")
+    # def x(
+    #     # fastMCP will automatically parse the input_schema from object_type Pydantic model from the request
+    #     object_type: SnowflakeWarehouse | str,
+    #     mode: Literal[
+    #         "error_if_exists", "replace", "if_not_exists"
+    #     ] = "error_if_exists",
+    # ):
+    #     if isinstance(object_type, str):
+    #         try:
+    #             object_type = SnowflakeWarehouse(**json.loads(object_type))
+    #         except Exception as e:
+    #             raise SnowflakeException(tool="hello world", message=e)
+    #     return create_object(object_type, root, mode)
