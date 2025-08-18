@@ -1,9 +1,14 @@
+import json
 from typing import Literal
 
 from fastmcp import FastMCP
 from snowflake.core import CreateMode, Root
 
-from mcp_server_snowflake.object_manager.objects import ObjectMetadata, SnowflakeClasses
+from mcp_server_snowflake.object_manager.objects import (
+    ObjectMetadata,
+    SnowflakeClasses,
+    SnowflakeWarehouse,
+)
 from mcp_server_snowflake.utils import SnowflakeException
 
 
@@ -87,3 +92,15 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
             like: str | None = None,
         ):
             return list_objects(object_type, root, like)
+
+    @server.tool(name="hello world")
+    def x(
+        # fastMCP will automatically parse the input_schema from object_type Pydantic model from the request
+        object_type: SnowflakeWarehouse | str,
+        mode: Literal[
+            "error_if_exists", "replace", "if_not_exists"
+        ] = "error_if_exists",
+    ):
+        if isinstance(object_type, str):
+            object_type = json.loads(object_type)
+        return create_object(object_type, root, mode)
