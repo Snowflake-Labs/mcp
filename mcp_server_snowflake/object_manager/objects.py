@@ -37,6 +37,14 @@ class SnowflakeDatabase(ObjectMetadata):
     kind: Literal["PERMANENT", "TRANSIENT"] = Field(
         default="PERMANENT", description="The kind of database"
     )
+    data_retention_time_in_days: int = Field(
+        ge=0,
+        lt=90,
+        default=None,
+        description="Specifies the number of days for which Time Travel actions (CLONE and UNDROP)"
+        "can be performed on the database, as well as specifying the default"
+        "Time Travel retention time for all schemas created in the database.",
+    )
 
     def get_core_object(self):
         return Database.from_dict(self.__dict__)
@@ -50,6 +58,14 @@ class SnowflakeSchema(ObjectMetadata):
     kind: Literal["PERMANENT", "TRANSIENT"] = Field(
         default="PERMANENT", description="The kind of database"
     )
+    data_retention_time_in_days: int = Field(
+        ge=0,
+        lt=90,
+        default=None,
+        description="Specifies the number of days for which Time Travel actions (CLONE and UNDROP)"
+        "can be performed on the schema, as well as specifying the default"
+        "Time Travel retention time for all tables created in the schema.",
+    )
 
     def get_core_object(self):
         return Schema.from_dict(self.__dict__)
@@ -61,6 +77,7 @@ class SnowflakeSchema(ObjectMetadata):
 class SnowflakeTableColumn(BaseModel):
     name: str = Field(description="The name of the column")
     datatype: str = Field(description="The data type of the column")
+    nullable: bool = Field(default=None, description="Whether the column can be null")
 
 
 class SnowflakeTable(ObjectMetadata):
@@ -72,6 +89,13 @@ class SnowflakeTable(ObjectMetadata):
     # Columns only used if creating a table
     columns: list[SnowflakeTableColumn] = Field(
         default=None, description="The columns of the table"
+    )
+    data_retention_time_in_days: int = Field(
+        ge=0,
+        lt=90,
+        default=None,
+        description="Specifies the retention period for the table so that Time Travel actions "
+        "SELECT, CLONE, UNDROP can be performed on historical data in the table.",
     )
 
     def get_core_object(self):
@@ -104,6 +128,22 @@ class SnowflakeWarehouse(ObjectMetadata):
     )
     initially_suspended: Literal["true", "false"] = Field(
         default=None, description="Whether the warehouse is initially suspended"
+    )
+    max_cluster_count: int = Field(
+        default=None,
+        description="Specifies the maximum number of clusters for a multi-cluster warehouse",
+    )
+    min_cluster_count: int = Field(
+        default=None,
+        description="Specifies the minimum number of clusters for a multi-cluster warehouse",
+    )
+    scaling_policy: Literal["STANDARD", "ECONOMY"] = Field(
+        default=None,
+        description="Scaling policy of warehouse, possible scaling policies: STANDARD, ECONOMY",
+    )
+    statement_timeout_in_seconds: int = Field(
+        default=None,
+        description="Object parameter that specifies the time, in seconds, after which a running SQL statement is canceled by the system",
     )
 
     def get_core_object(self):
