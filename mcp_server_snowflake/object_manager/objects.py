@@ -348,4 +348,5 @@ SnowflakeClasses = [
     SnowflakeRole,
     SnowflakeStage,
     SnowflakeUser,
+    SnowflakeImageRepository,
 ]
