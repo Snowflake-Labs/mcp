@@ -36,6 +36,22 @@ def sanitize_tool_name(service_name: str) -> str:
     return sanitized
 
 
+def unpack_sql_statement_permissions(
+    sql_statement_permissions: list,
+) -> tuple[list[str], list[str]]:
+    """Unpack SQL statement permissions into a tuple of allowed and disallowed statements."""
+
+    allowed = []
+    disallowed = []
+    for statement_dict in sql_statement_permissions:
+        for sql_type, is_allowed in statement_dict.items():
+            if is_allowed:
+                allowed.append(sql_type.lower())
+            else:
+                disallowed.append(sql_type.lower())
+    return allowed, disallowed
+
+
 class AnalystResponse(BaseModel):
     """
     Response model for Cortex Analyst API results.

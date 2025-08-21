@@ -30,12 +30,16 @@ from mcp_server_snowflake.environment import (
     is_running_in_spcs_container,
 )
 from mcp_server_snowflake.object_manager.tools import initialize_object_manager_tools
-from mcp_server_snowflake.query_manager.tools import initialize_query_manager_tool
+from mcp_server_snowflake.query_manager.tools import (
+    CheckQueryType,
+    initialize_query_manager_tool,
+)
 from mcp_server_snowflake.utils import (
     cleanup_snowflake_service,
     get_login_params,
     load_tools_config_resource,
     sanitize_tool_name,
+    unpack_sql_statement_permissions,
 )
 
 # Used to quantify Snowflake usage
@@ -81,6 +85,10 @@ class SnowflakeService:
         List of configured analyst service specifications
     agent_services : list
         List of configured agent service specifications
+    sql_statement_allowed : list
+        List of allowed SQL statement types
+    sql_statement_disallowed : list
+        List of disallowed SQL statement types
     connection : snowflake.connector.Connection
         Snowflake connection object
     """
@@ -98,6 +106,8 @@ class SnowflakeService:
         self.search_services = []
         self.analyst_services = []
         self.agent_services = []
+        self.sql_statement_allowed = []
+        self.sql_statement_disallowed = []
         self.default_session_parameters: Dict[str, Any] = {}
         self.query_tag = query_tag if query_tag is not None else None
         self.tag_major_version = (
@@ -144,6 +154,12 @@ class SnowflakeService:
             self.agent_services = service_config.get(
                 "agent_services", []
             )  # Not supported yet
+            self.sql_statement_allowed, self.sql_statement_disallowed = (
+                unpack_sql_statement_permissions(
+                    service_config.get("sql_statement_permissions", ([], []))
+                )
+            )
+
         except Exception as e:
             logger.error(f"Error extracting service specifications: {e}")
             raise
@@ -476,6 +492,7 @@ def create_lifespan(args):
             # Initialize tools and resources now that we have the service
             logger.info("Initializing tools and resources...")
             initialize_tools(snowflake_service, server)
+            initialize_middleware(server, snowflake_service)
             initialize_resources(snowflake_service, server)
 
             yield snowflake_service
@@ -502,6 +519,15 @@ def initialize_resources(snowflake_service: SnowflakeService, server: FastMCP):
             snowflake_service.service_config_file
         )
         return json.loads(tools_config)
+
+
+def initialize_middleware(server: FastMCP, snowflake_service: SnowflakeService):
+    server.add_middleware(
+        CheckQueryType(
+            sql_allow_list=snowflake_service.sql_statement_allowed,
+            sql_disallow_list=snowflake_service.sql_statement_disallowed,
+        )
+    )
 
 
 def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
