@@ -6,8 +6,8 @@ def drop_object_prompt(object_type: str):
     return f"""Drop a Snowflake {object_type} object."""
 
 
-def update_object_prompt(object_type: str):
-    return f"""Update a Snowflake {object_type} object."""
+def create_or_alter_object_prompt(object_type: str):
+    return f"""Update a Snowflake {object_type} object if it exists. Otherwise, create a new Snowflake {object_type} object."""
 
 
 def describe_object_prompt(object_type: str):
