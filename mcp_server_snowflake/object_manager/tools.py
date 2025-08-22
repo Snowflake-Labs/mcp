@@ -11,10 +11,10 @@ from mcp_server_snowflake.object_manager.objects import (
 )
 from mcp_server_snowflake.object_manager.prompts import (
     create_object_prompt,
+    create_or_alter_object_prompt,
     describe_object_prompt,
     drop_object_prompt,
     list_objects_prompt,
-    update_object_prompt,
 )
 from mcp_server_snowflake.utils import SnowflakeException
 
@@ -55,7 +55,7 @@ def drop_object(object_type: ObjectMetadata, root: Root, if_exists: bool = False
         raise SnowflakeException(tool="drop_object", message=e)
 
 
-def update_object(object_type: ObjectMetadata, root: Root):
+def create_or_alter_object(object_type: ObjectMetadata, root: Root):
     core_object = object_type.get_core_object()
     core_path = object_type.get_core_path(root=root)
     try:
@@ -67,10 +67,10 @@ def update_object(object_type: ObjectMetadata, root: Root):
                 setattr(existing_object, key, value)
         # Then create or alter the object
         core_path[core_object.name].create_or_alter(existing_object)
-        return f"Updated {get_class_name(core_object)} {core_object.name}."
+        return f"Created or altered {get_class_name(core_object)} {core_object.name}."
 
     except Exception as e:
-        raise SnowflakeException(tool="update_object", message=e)
+        raise SnowflakeException(tool="create_or_alter_object", message=e)
 
 
 def describe_object(object_type: ObjectMetadata, root: Root):
@@ -152,10 +152,10 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
             return f"Dropped {obj_name} {target_object.name}."
 
         @server.tool(
-            name=f"update_{obj_name}",
-            description=update_object_prompt(obj_name),
+            name=f"create_or_alter_{obj_name}",
+            description=create_or_alter_object_prompt(obj_name),
         )
-        def update_object_tool(
+        def create_or_alter_object_tool(
             target_object: Annotated[
                 obj_type | str,
                 Field(
@@ -163,8 +163,10 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
                 ),
             ],
         ):
-            target_object = parse_object(target_object, obj_type, f"update_{obj_name}")
-            return update_object(target_object, root)
+            target_object = parse_object(
+                target_object, obj_type, f"create_or_alter_{obj_name}"
+            )
+            return create_or_alter_object(target_object, root)
 
         @server.tool(
             name=f"describe_{obj_name}",
@@ -204,3 +206,30 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
 
         # Call the closure to create tools for this specific type
         create_tools_for_type(object_type, object_name)
+
+
+def validate_object_tool(
+    function_name: str, sql_allow_list: list[str], sql_disallow_list: list[str]
+) -> tuple[str, bool]:
+    """
+    Validates a function call against a list of allowed and disallowed object types.
+
+    Only consider some object actions for now including create, create_or_alter, and drop.
+    """
+    if function_name.lower().startswith(
+        "create"
+    ):  # Will also capture create_or_alter, which is intended
+        func_type = "create"
+    elif function_name.lower().startswith("drop"):
+        func_type = "create"
+    else:
+        return True
+
+    if func_type in sql_allow_list:
+        valid = True
+    elif func_type in sql_disallow_list:
+        valid = False
+    else:
+        valid = False
+
+    return (func_type, valid)

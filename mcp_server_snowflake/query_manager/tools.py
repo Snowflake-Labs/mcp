@@ -2,8 +2,6 @@ from typing import Annotated
 
 import sqlglot
 from fastmcp import FastMCP
-from fastmcp.exceptions import ToolError
-from fastmcp.server.middleware import Middleware, MiddlewareContext
 from pydantic import Field
 
 from mcp_server_snowflake.query_manager.prompts import query_tool_prompt
@@ -78,45 +76,33 @@ def get_statement_type(sql_string):
         statement_type = type(expression_tree).__name__
 
         return statement_type
-    except sqlglot.errors.ParseError as e:
-        return f"SQL parsing error: {e}"
+    except (
+        sqlglot.errors.ParseError
+    ):  # We will map this back to user's Unknown statement type setting
+        return "Unknown"
 
 
-class CheckQueryType(Middleware):
-    """Middleware that checks SQL statement to ensure it is of an approved type."""
+def validate_sql_type(
+    sql_string: str, sql_allow_list: list[str], sql_disallow_list: list[str]
+) -> tuple[str, bool]:
+    """
+    Validates a SQL statement type against a list of allowed and disallowed statement types.
+    """
+    statement_type = get_statement_type(sql_string)
+    if (
+        "all" in sql_allow_list
+    ):  # Escape hatch for allowing all statements if user elects to explicitly
+        valid = True
+    elif (
+        statement_type.lower() in sql_disallow_list
+    ):  # Allow/Disallow lists should already be lowercase at load
+        valid = False
+    elif statement_type.lower() in sql_allow_list:
+        valid = True
+    # There may be a new unmapped type that is not in the allow/disallow lists. If the user has set Unknown to True, allow it.
+    elif "unknown" in sql_allow_list:
+        valid = True
+    else:  # If not in allowed or disallowed and unknown in disallow or omitted, return error. User can always add to list as they find statements not otherwise allowed.
+        valid = False
 
-    def __init__(self, sql_allow_list: list[str], sql_disallow_list: list[str]):
-        self.sql_allow_list = sql_allow_list
-        self.sql_disallow_list = sql_disallow_list
-
-    async def on_call_tool(self, context: MiddlewareContext, call_next):
-        """Called for all MCP tool calls."""
-        tool_name = context.message.name
-
-        # Check SQL statement permissions before running query
-        if tool_name.lower() == "run_snowflake_query" and context.message.arguments.get(
-            "statement", None
-        ):
-            statement_type = get_statement_type(
-                context.message.arguments.get("statement", None)
-            )
-            if (
-                "all" in self.sql_allow_list
-            ):  # Escape hatch for allowing all statements if user elects to explicitly
-                return await call_next(context)
-            elif (
-                statement_type.lower() in self.sql_disallow_list
-            ):  # Allow/Disallow lists should already be lowercase at load
-                raise ToolError(
-                    f"SQL statement type of {statement_type} is not allowed. Please review sql statement permissions in configuration file."
-                )
-            elif statement_type.lower() in self.sql_allow_list:
-                return await call_next(context)
-            else:  # If not in allowed or disallowed, return error. User can always add to list as they find statements not otherwise allowed.
-                raise ToolError(
-                    f"SQL statement type of {statement_type} is not allowed. Please review sql statement permissions in configuration file."
-                )
-
-        # Allow other tools to proceed
-        else:
-            return await call_next(context)
+    return (statement_type, valid)

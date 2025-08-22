@@ -30,10 +30,8 @@ from mcp_server_snowflake.environment import (
     is_running_in_spcs_container,
 )
 from mcp_server_snowflake.object_manager.tools import initialize_object_manager_tools
-from mcp_server_snowflake.query_manager.tools import (
-    CheckQueryType,
-    initialize_query_manager_tool,
-)
+from mcp_server_snowflake.query_manager.tools import initialize_query_manager_tool
+from mcp_server_snowflake.server_utils import initialize_middleware
 from mcp_server_snowflake.utils import (
     cleanup_snowflake_service,
     get_login_params,
@@ -350,7 +348,6 @@ class SnowflakeService:
                 yield self.connection, cursor
             finally:
                 cursor.close()
-                # connection.close()
 
         except Exception as e:
             logger.error(f"Error establishing Snowflake connection: {e}")
@@ -519,15 +516,6 @@ def initialize_resources(snowflake_service: SnowflakeService, server: FastMCP):
             snowflake_service.service_config_file
         )
         return json.loads(tools_config)
-
-
-def initialize_middleware(server: FastMCP, snowflake_service: SnowflakeService):
-    server.add_middleware(
-        CheckQueryType(
-            sql_allow_list=snowflake_service.sql_statement_allowed,
-            sql_disallow_list=snowflake_service.sql_statement_disallowed,
-        )
-    )
 
 
 def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
