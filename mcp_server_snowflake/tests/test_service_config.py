@@ -34,8 +34,12 @@ def mock_connection_params():
 @pytest.fixture
 def mock_snowflake_connect():
     """Mock the Snowflake connection for all tests."""
-    with patch("mcp_server_snowflake.server.connect") as mock_connect:
+    with (
+        patch("mcp_server_snowflake.server.connect") as mock_connect,
+        patch("mcp_server_snowflake.server.Root") as mock_root,
+    ):
         mock_connect.return_value = MagicMock()
+        mock_root.return_value = MagicMock()
         yield mock_connect
 
 
