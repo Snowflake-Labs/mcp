@@ -154,7 +154,7 @@ class SnowflakeService:
             )  # Not supported yet
             self.sql_statement_allowed, self.sql_statement_disallowed = (
                 unpack_sql_statement_permissions(
-                    service_config.get("sql_statement_permissions", ([], []))
+                    service_config.get("sql_statement_permissions", [])
                 )
             )
 
