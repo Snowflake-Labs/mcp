@@ -5,8 +5,8 @@
     "version": "1.0.0",
     "created": "2025-01-25",
     "source_doc": "CODE_REVIEW.md",
-    "branch": "object-mgmt-with-pydantic",
-    "focus": "MCP tool testing with bug documentation"
+    "branch": "object-mgmt-code-review",
+    "focus": "Comprehensive MCP tool testing and validation"
   },
   "execution_rules": {
     "phase_progression": "Complete one phase at a time, get confirmation before proceeding",
@@ -76,11 +76,6 @@
             "expected": "Database dropped",
             "document": ["cleanup_success"]
           }
-        ],
-        "bug_check": [
-          "BUG-002: Check if list returns iterator or list",
-          "Note any JSON parsing issues",
-          "Document error message quality"
         ]
       },
       "step_2_warehouse_operations": {
@@ -171,8 +166,8 @@
         "Total tests executed",
         "Success rate",
         "Average response time",
-        "Bugs confirmed",
-        "New issues discovered"
+        "Issues discovered",
+        "Areas for improvement"
       ],
       "confirm_next": "Ask: Ready for Phase 3 (Pydantic Validation)? Any additional tests needed?"
     }
@@ -192,8 +187,8 @@
                 "data_retention_time_in_days": 90
               }
             },
-            "expected": "Should work with BUG-001 fix, fail without",
-            "document": ["BUG-001 status", "actual_behavior"]
+            "expected": "Should enforce 90-day maximum",
+            "document": ["validation_works", "actual_behavior"]
           },
           {
             "name": "Data Retention - Over Max",
@@ -297,10 +292,6 @@
         ]
       }
     },
-    "bug_verification": {
-      "BUG_001": "Test 90-day retention specifically",
-      "new_issues": "Document any new validation gaps"
-    },
     "phase_completion": {
       "confirm_next": "Ask: Ready for Phase 4 (List Operations)? Need to fix any validation issues first?"
     }
@@ -386,10 +377,10 @@
         ]
       },
       "step_3_return_type_check": {
-        "action": "Verify BUG-002 iterator vs list",
+        "action": "Verify return type of list operations",
         "test": "Check actual return type of list operations",
         "expected": "Should return list, not iterator",
-        "document": ["BUG-002 status", "actual_type", "needs_fix"]
+        "document": ["actual_type", "performance", "format"]
       }
     },
     "phase_completion": {
@@ -459,7 +450,7 @@
               }
             },
             "expected": "Table with columns created",
-            "document": ["column_creation", "BUG-003 null safety check"]
+            "document": ["column_creation", "null_handling", "data_types"]
           }
         ]
       },
@@ -556,8 +547,8 @@
     "phase_completion": {
       "final_summary": [
         "All phases completed",
-        "Total bugs confirmed",
-        "New issues discovered",
+        "Total tests executed",
+        "Issues discovered and resolved",
         "Performance metrics",
         "Ready for production assessment"
       ]
@@ -592,7 +583,7 @@
       "sections": [
         "# MCP Server Test Results",
         "## Executive Summary",
-        "## Bug Status",
+        "## Test Results",
         "## Performance Metrics",
         "## Production Readiness",
         "## Recommendations"
