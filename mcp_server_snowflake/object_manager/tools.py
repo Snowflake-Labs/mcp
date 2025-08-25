@@ -61,14 +61,25 @@ def update_object(object_type: ObjectMetadata, root: Root):
     try:
         # First need to fetch the existing object
         existing_object = core_path[core_object.name].fetch()
-        # Then update the existing object with the new properties
-        for key, value in core_object.model_dump().items():
-            if value is not None:
+        
+        # Then update the existing object with the new properties from the Pydantic model
+        # Get the data from the Pydantic model (object_type), not the core object
+        data = object_type.model_dump(exclude_unset=True)
+        
+        # Update only non-None values
+        for key, value in data.items():
+            if value is not None and hasattr(existing_object, key):
                 setattr(existing_object, key, value)
+                
         # Then create or alter the object
         core_path[core_object.name].create_or_alter(existing_object)
         return f"Updated {get_class_name(core_object)} {core_object.name}."
 
+    except AttributeError as e:
+        raise SnowflakeException(
+            tool="update_object", 
+            message=f"AttributeError: {str(e)}. object_type is {type(object_type).__name__}"
+        )
     except Exception as e:
         raise SnowflakeException(tool="update_object", message=e)
 

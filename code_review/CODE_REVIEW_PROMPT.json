@@ -1,0 +1,620 @@
+{
+  "prompt_id": "snowflake_mcp_code_review_v1",
+  "prompt_type": "phased_testing_execution",
+  "metadata": {
+    "version": "1.0.0",
+    "created": "2025-01-25",
+    "source_doc": "CODE_REVIEW.md",
+    "branch": "object-mgmt-with-pydantic",
+    "focus": "MCP tool testing with bug documentation"
+  },
+  "execution_rules": {
+    "phase_progression": "Complete one phase at a time, get confirmation before proceeding",
+    "code_changes": "Always ask permission before modifying code, explain why",
+    "documentation": "Document every test result and performance metric",
+    "simplicity": "Keep responses concise and actionable"
+  },
+  "phase_2_individual_tools": {
+    "objective": "Test each tool type in isolation",
+    "setup": {
+      "confirm_ready": [
+        "MCP server is running in Cursor",
+        "Snowflake connection is active",
+        "Test database 'MCP_TEST' exists or can be created"
+      ]
+    },
+    "test_sequence": {
+      "step_1_database_operations": {
+        "action": "Test Database CRUD operations",
+        "tests": [
+          {
+            "name": "Create Database - Object",
+            "mcp_tool": "create_database",
+            "input": {"database": {"name": "MCP_TEST_DB_001"}},
+            "expected": "Database created successfully",
+            "document": ["response_time", "success/failure", "error_message"]
+          },
+          {
+            "name": "Create Database - JSON String",
+            "mcp_tool": "create_database",
+            "input": {"database": "{\"name\": \"MCP_TEST_DB_002\"}"},
+            "expected": "Database created from JSON string",
+            "document": ["json_parsing_success", "response_time"]
+          },
+          {
+            "name": "List Databases",
+            "mcp_tool": "list_databases",
+            "input": {},
+            "expected": "Array of database objects",
+            "document": ["count", "format", "iterator_vs_list_issue"]
+          },
+          {
+            "name": "List with Filter",
+            "mcp_tool": "list_databases",
+            "input": {"starts_with": "MCP_TEST"},
+            "expected": "Filtered list of databases",
+            "document": ["filter_accuracy", "count"]
+          },
+          {
+            "name": "Describe Database",
+            "mcp_tool": "describe_database",
+            "input": {"name": "MCP_TEST_DB_001"},
+            "expected": "Database details",
+            "document": ["fields_returned", "completeness"]
+          },
+          {
+            "name": "Update Database",
+            "mcp_tool": "update_database",
+            "input": {"database": {"name": "MCP_TEST_DB_001", "comment": "Updated via MCP"}},
+            "expected": "Database updated",
+            "document": ["update_success", "fields_changed"]
+          },
+          {
+            "name": "Drop Database",
+            "mcp_tool": "drop_database",
+            "input": {"name": "MCP_TEST_DB_001", "if_exists": true},
+            "expected": "Database dropped",
+            "document": ["cleanup_success"]
+          }
+        ],
+        "bug_check": [
+          "BUG-002: Check if list returns iterator or list",
+          "Note any JSON parsing issues",
+          "Document error message quality"
+        ]
+      },
+      "step_2_warehouse_operations": {
+        "action": "Test Warehouse CRUD operations",
+        "tests": [
+          {
+            "name": "Create Warehouse",
+            "mcp_tool": "create_warehouse",
+            "input": {
+              "warehouse": {
+                "name": "MCP_TEST_WH_001",
+                "warehouse_size": "XSMALL",
+                "auto_suspend": 60
+              }
+            },
+            "expected": "Warehouse created",
+            "document": ["creation_time", "default_values_applied"]
+          },
+          {
+            "name": "List Warehouses",
+            "mcp_tool": "list_warehouses",
+            "input": {"like": "MCP_TEST%"},
+            "expected": "Filtered warehouse list",
+            "document": ["pattern_matching_works", "count"]
+          },
+          {
+            "name": "Update Warehouse Size",
+            "mcp_tool": "update_warehouse",
+            "input": {
+              "warehouse": {
+                "name": "MCP_TEST_WH_001",
+                "warehouse_size": "SMALL"
+              }
+            },
+            "expected": "Size updated",
+            "document": ["resize_success", "response_time"]
+          }
+        ]
+      },
+      "step_3_user_role_operations": {
+        "action": "Test User and Role operations",
+        "tests": [
+          {
+            "name": "Create Role",
+            "mcp_tool": "create_role",
+            "input": {"role": {"name": "MCP_TEST_ROLE_001"}},
+            "expected": "Role created",
+            "document": ["success", "permissions_needed"]
+          },
+          {
+            "name": "Create User",
+            "mcp_tool": "create_user",
+            "input": {
+              "user": {
+                "name": "MCP_TEST_USER_001",
+                "password": "TempPass123!@#"
+              }
+            },
+            "expected": "User created",
+            "document": ["password_requirements_met", "success"]
+          }
+        ]
+      },
+      "step_4_cleanup": {
+        "action": "Clean up all test objects",
+        "operations": [
+          "Drop all MCP_TEST databases",
+          "Drop all MCP_TEST warehouses",
+          "Drop all MCP_TEST users and roles"
+        ],
+        "verify": "Confirm no test objects remain"
+      }
+    },
+    "documentation": {
+      "format": "markdown_table",
+      "columns": [
+        "Tool",
+        "Test Case",
+        "Result",
+        "Response Time",
+        "Issues Found",
+        "Notes"
+      ],
+      "example": "| create_database | Object input | ✅ Success | 1.2s | None | Clean execution |"
+    },
+    "phase_completion": {
+      "summary": [
+        "Total tests executed",
+        "Success rate",
+        "Average response time",
+        "Bugs confirmed",
+        "New issues discovered"
+      ],
+      "confirm_next": "Ask: Ready for Phase 3 (Pydantic Validation)? Any additional tests needed?"
+    }
+  },
+  "phase_3_pydantic_validation": {
+    "objective": "Test Pydantic validation boundaries",
+    "test_sequence": {
+      "step_1_field_validation": {
+        "action": "Test field validation limits",
+        "tests": [
+          {
+            "name": "Data Retention - Max Valid",
+            "mcp_tool": "create_database",
+            "input": {
+              "database": {
+                "name": "MCP_RETENTION_TEST",
+                "data_retention_time_in_days": 90
+              }
+            },
+            "expected": "Should work with BUG-001 fix, fail without",
+            "document": ["BUG-001 status", "actual_behavior"]
+          },
+          {
+            "name": "Data Retention - Over Max",
+            "mcp_tool": "create_database",
+            "input": {
+              "database": {
+                "name": "MCP_RETENTION_TEST2",
+                "data_retention_time_in_days": 91
+              }
+            },
+            "expected": "Validation error",
+            "document": ["error_message_quality", "pydantic_feedback"]
+          },
+          {
+            "name": "Invalid Warehouse Size",
+            "mcp_tool": "create_warehouse",
+            "input": {
+              "warehouse": {
+                "name": "MCP_SIZE_TEST",
+                "warehouse_size": "INVALID_SIZE"
+              }
+            },
+            "expected": "Validation error with valid sizes listed",
+            "document": ["error_helpfulness", "valid_options_shown"]
+          },
+          {
+            "name": "Transient DB Retention Limit",
+            "mcp_tool": "create_database",
+            "input": {
+              "database": {
+                "name": "MCP_TRANSIENT_TEST",
+                "is_transient": true,
+                "data_retention_time_in_days": 2
+              }
+            },
+            "expected": "Validation error (max 1 day for transient)",
+            "document": ["transient_validation_works"]
+          }
+        ]
+      },
+      "step_2_json_parsing": {
+        "action": "Test JSON string input parsing",
+        "tests": [
+          {
+            "name": "Valid JSON String",
+            "mcp_tool": "create_database",
+            "input": {"database": "{\"name\": \"MCP_JSON_TEST\"}"},
+            "expected": "Successful parsing and creation",
+            "document": ["json_to_pydantic_works"]
+          },
+          {
+            "name": "Invalid JSON String",
+            "mcp_tool": "create_database",
+            "input": {"database": "{\"name\": \"MCP_JSON_TEST\""},
+            "expected": "JSON parsing error",
+            "document": ["error_clarity", "shows_json_issue"]
+          },
+          {
+            "name": "Non-JSON String",
+            "mcp_tool": "create_database",
+            "input": {"database": "not_json_at_all"},
+            "expected": "Clear error about format",
+            "document": ["handles_gracefully", "error_message"]
+          },
+          {
+            "name": "Null/Empty Input",
+            "mcp_tool": "create_database",
+            "input": {"database": null},
+            "expected": "Required field error",
+            "document": ["null_handling"]
+          }
+        ]
+      },
+      "step_3_type_coercion": {
+        "action": "Test Pydantic type coercion",
+        "tests": [
+          {
+            "name": "String to Integer",
+            "mcp_tool": "create_database",
+            "input": {
+              "database": {
+                "name": "MCP_COERCE_TEST",
+                "data_retention_time_in_days": "30"
+              }
+            },
+            "expected": "Should coerce string to int",
+            "document": ["coercion_success", "behavior"]
+          },
+          {
+            "name": "Boolean String",
+            "mcp_tool": "create_database",
+            "input": {
+              "database": {
+                "name": "MCP_BOOL_TEST",
+                "is_transient": "true"
+              }
+            },
+            "expected": "Should coerce to boolean",
+            "document": ["boolean_parsing"]
+          }
+        ]
+      }
+    },
+    "bug_verification": {
+      "BUG_001": "Test 90-day retention specifically",
+      "new_issues": "Document any new validation gaps"
+    },
+    "phase_completion": {
+      "confirm_next": "Ask: Ready for Phase 4 (List Operations)? Need to fix any validation issues first?"
+    }
+  },
+  "phase_4_list_operations": {
+    "objective": "Test filtering and list return types",
+    "setup": {
+      "create_test_objects": [
+        "Create 10+ databases with pattern: MCP_LIST_TEST_001 through MCP_LIST_TEST_010",
+        "Create some with similar prefixes: MCP_LIST_A_001, MCP_LIST_B_001"
+      ]
+    },
+    "test_sequence": {
+      "step_1_filter_patterns": {
+        "tests": [
+          {
+            "name": "LIKE Pattern - Wildcard",
+            "mcp_tool": "list_databases",
+            "input": {"like": "MCP_LIST_%"},
+            "expected": "All MCP_LIST databases",
+            "document": ["pattern_match_count", "accuracy"]
+          },
+          {
+            "name": "LIKE Pattern - Complex",
+            "mcp_tool": "list_databases",
+            "input": {"like": "%_TEST_%"},
+            "expected": "Matches pattern",
+            "document": ["complex_pattern_works"]
+          },
+          {
+            "name": "starts_with Filter",
+            "mcp_tool": "list_databases",
+            "input": {"starts_with": "MCP_LIST_A"},
+            "expected": "Only MCP_LIST_A databases",
+            "document": ["prefix_filter_accuracy"]
+          },
+          {
+            "name": "Mutual Exclusion Test",
+            "mcp_tool": "list_databases",
+            "input": {"like": "MCP%", "starts_with": "MCP"},
+            "expected": "Error - mutually exclusive",
+            "document": ["validation_works", "error_message"]
+          }
+        ]
+      },
+      "step_2_limit_boundaries": {
+        "tests": [
+          {
+            "name": "Limit 1",
+            "mcp_tool": "list_databases",
+            "input": {"limit": 1},
+            "expected": "Exactly 1 result",
+            "document": ["limit_respected"]
+          },
+          {
+            "name": "Limit 100",
+            "mcp_tool": "list_databases",
+            "input": {"limit": 100},
+            "expected": "Up to 100 results",
+            "document": ["performance_at_100"]
+          },
+          {
+            "name": "Limit 10001 - Over Max",
+            "mcp_tool": "list_databases",
+            "input": {"limit": 10001},
+            "expected": "Validation error",
+            "document": ["max_limit_enforced"]
+          },
+          {
+            "name": "Limit 0",
+            "mcp_tool": "list_databases",
+            "input": {"limit": 0},
+            "expected": "Error or empty list",
+            "document": ["zero_behavior"]
+          },
+          {
+            "name": "Negative Limit",
+            "mcp_tool": "list_databases",
+            "input": {"limit": -1},
+            "expected": "Validation error",
+            "document": ["negative_validation"]
+          }
+        ]
+      },
+      "step_3_return_type_check": {
+        "action": "Verify BUG-002 iterator vs list",
+        "test": "Check actual return type of list operations",
+        "expected": "Should return list, not iterator",
+        "document": ["BUG-002 status", "actual_type", "needs_fix"]
+      }
+    },
+    "phase_completion": {
+      "cleanup": "Drop all MCP_LIST_TEST objects",
+      "confirm_next": "Ask: Ready for Phase 5 (Complex Dependencies)? Any list operation issues to address?"
+    }
+  },
+  "phase_5_complex_dependencies": {
+    "objective": "Test object relationships and cascading",
+    "test_sequence": {
+      "step_1_parent_child_relationships": {
+        "tests": [
+          {
+            "name": "Schema in Database",
+            "sequence": [
+              {
+                "mcp_tool": "create_database",
+                "input": {"database": {"name": "MCP_PARENT_DB"}},
+                "document": "Parent created"
+              },
+              {
+                "mcp_tool": "create_schema",
+                "input": {
+                  "schema": {
+                    "name": "CHILD_SCHEMA",
+                    "database": "MCP_PARENT_DB"
+                  }
+                },
+                "document": "Child schema created"
+              },
+              {
+                "mcp_tool": "drop_database",
+                "input": {"name": "MCP_PARENT_DB", "cascade": true},
+                "document": "Cascade deletion works"
+              }
+            ]
+          }
+        ]
+      },
+      "step_2_table_with_columns": {
+        "tests": [
+          {
+            "name": "Table Creation with Columns",
+            "mcp_tool": "create_table",
+            "input": {
+              "table": {
+                "name": "MCP_TEST_TABLE",
+                "database": "MCP_PARENT_DB",
+                "schema": "PUBLIC",
+                "columns": [
+                  {
+                    "name": "ID",
+                    "datatype": "NUMBER",
+                    "nullable": false
+                  },
+                  {
+                    "name": "NAME",
+                    "datatype": "VARCHAR(100)",
+                    "nullable": true
+                  },
+                  {
+                    "name": "CREATED_AT",
+                    "datatype": "TIMESTAMP",
+                    "nullable": false
+                  }
+                ]
+              }
+            },
+            "expected": "Table with columns created",
+            "document": ["column_creation", "BUG-003 null safety check"]
+          }
+        ]
+      },
+      "step_3_stage_with_credentials": {
+        "tests": [
+          {
+            "name": "External Stage",
+            "mcp_tool": "create_stage",
+            "input": {
+              "stage": {
+                "name": "MCP_TEST_STAGE",
+                "url": "s3://test-bucket/path",
+                "credentials": {
+                  "AWS_KEY_ID": "test_key",
+                  "AWS_SECRET_KEY": "test_secret"
+                }
+              }
+            },
+            "expected": "Stage created (or permission error)",
+            "document": ["credential_handling", "security_check"]
+          }
+        ]
+      },
+      "step_4_compute_pool": {
+        "tests": [
+          {
+            "name": "Compute Pool Creation",
+            "mcp_tool": "create_compute_pool",
+            "input": {
+              "compute_pool": {
+                "name": "MCP_TEST_POOL",
+                "min_nodes": 1,
+                "max_nodes": 2
+              }
+            },
+            "expected": "Pool created or feature availability error",
+            "document": ["compute_pool_support", "error_if_not_available"]
+          }
+        ]
+      }
+    },
+    "phase_completion": {
+      "summary": "Document all relationship tests",
+      "confirm_next": "Ask: Ready for Phase 6 (Error Recovery)? Any dependency issues found?"
+    }
+  },
+  "phase_6_error_recovery": {
+    "objective": "Test error handling and recovery",
+    "test_sequence": {
+      "step_1_permission_errors": {
+        "tests": [
+          {
+            "name": "Drop System Database",
+            "mcp_tool": "drop_database",
+            "input": {"name": "SNOWFLAKE"},
+            "expected": "Permission denied with clear message",
+            "document": ["system_db_protected", "error_clarity"]
+          },
+          {
+            "name": "Insufficient Privileges",
+            "note": "Test with limited role if possible",
+            "expected": "Clear privilege error",
+            "document": ["permission_error_quality"]
+          }
+        ]
+      },
+      "step_2_concurrent_operations": {
+        "tests": [
+          {
+            "name": "Duplicate Creation Race",
+            "action": "Try creating same database twice rapidly",
+            "expected": "One succeeds, one fails gracefully",
+            "document": ["race_condition_handling", "error_message"]
+          }
+        ]
+      },
+      "step_3_connection_issues": {
+        "tests": [
+          {
+            "name": "Invalid Credentials",
+            "action": "Temporarily test with wrong password",
+            "expected": "Authentication error",
+            "document": ["auth_error_handling"]
+          },
+          {
+            "name": "Network Timeout",
+            "action": "Test with very long operation",
+            "expected": "Timeout handling",
+            "document": ["timeout_behavior"]
+          }
+        ]
+      }
+    },
+    "phase_completion": {
+      "final_summary": [
+        "All phases completed",
+        "Total bugs confirmed",
+        "New issues discovered",
+        "Performance metrics",
+        "Ready for production assessment"
+      ]
+    }
+  },
+  "reporting_template": {
+    "per_test": {
+      "format": "| Tool | Test | Result | Time | Issue | Notes |",
+      "example": "| create_database | Valid input | ✅ | 1.2s | None | Success |"
+    },
+    "per_phase": {
+      "sections": [
+        "## Phase X: [Name]",
+        "**Duration**: X minutes",
+        "**Tests Run**: X",
+        "**Success Rate**: X%",
+        "",
+        "### Issues Found:",
+        "- BUG-XXX: Description",
+        "",
+        "### Performance:",
+        "- Average response: Xs",
+        "- Slowest operation: X",
+        "",
+        "### Next Steps:",
+        "- [ ] Fix identified bugs",
+        "- [ ] Ready for next phase"
+      ]
+    },
+    "final_report": {
+      "filename": "MCP_TEST_RESULTS.md",
+      "sections": [
+        "# MCP Server Test Results",
+        "## Executive Summary",
+        "## Bug Status",
+        "## Performance Metrics",
+        "## Production Readiness",
+        "## Recommendations"
+      ]
+    }
+  },
+  "agent_behavior": {
+    "communication": [
+      "Keep responses under 10 lines unless showing results",
+      "Use tables for test results",
+      "Highlight failures with ❌ and successes with ✅"
+    ],
+    "code_changes": [
+      "Never modify code without permission",
+      "When change needed, explain: 'Found issue X in file:line. Need to change Y to Z because [reason]. May I proceed?'",
+      "Show minimal diff only"
+    ],
+    "phase_transitions": [
+      "Complete all tests in current phase",
+      "Show phase summary table",
+      "Ask: 'Phase X complete. Results: [summary]. Ready for Phase Y? Any additional tests needed?'",
+      "Wait for confirmation before proceeding"
+    ]
+  }
+}

@@ -45,8 +45,7 @@ class SnowflakeDatabase(ObjectMetadata):
     )
     data_retention_time_in_days: int = Field(
         ge=0,
-        lt=90,
-        default=None,
+        le=89,        default=None,
         description="Specifies the number of days for which Time Travel actions (CLONE and UNDROP)"
         "can be performed on the database, as well as specifying the default"
         "Time Travel retention time for all schemas created in the database.",
@@ -66,8 +65,7 @@ class SnowflakeSchema(ObjectMetadata):
     )
     data_retention_time_in_days: int = Field(
         ge=0,
-        lt=90,
-        default=None,
+        le=89,        default=None,
         description="Specifies the number of days for which Time Travel actions (CLONE and UNDROP)"
         "can be performed on the schema, as well as specifying the default"
         "Time Travel retention time for all tables created in the schema.",
@@ -103,8 +101,7 @@ class SnowflakeTable(ObjectMetadata):
     )
     data_retention_time_in_days: int = Field(
         ge=0,
-        lt=90,
-        default=None,
+        le=89,        default=None,
         description="Specifies the retention period for the table so that Time Travel actions "
         "SELECT, CLONE, UNDROP can be performed on historical data in the table.",
     )

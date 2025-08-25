@@ -176,3 +176,6 @@ cython_debug/
 # fast-agent files
 fastagent.secrets.yaml
 *.jsonl
+
+# claude
+.claude/
