@@ -237,6 +237,29 @@ def query_semantic_view(
         raise SnowflakeException(tool="query_semantic_view", message=e)
 
 
+def validate_semantic_view_tool(
+    function_name: str,
+    sql_allow_list: list[str],
+    sql_disallow_list: list[str],
+):
+    if function_name.lower().startswith("list"):
+        func_type = "select"
+    else:  # All other semantic view tools are permissible
+        return ("", True)
+
+    # User has not added any permissions, so we default to disallowing all object actions
+    if len(sql_allow_list) == 0 and len(sql_disallow_list) == 0:
+        valid = False
+    if func_type in sql_allow_list:
+        valid = True
+    elif func_type in sql_disallow_list:
+        valid = False
+    else:
+        valid = False
+
+    return (func_type, valid)
+
+
 def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
     @server.tool(
         name="list_semantic_views",
