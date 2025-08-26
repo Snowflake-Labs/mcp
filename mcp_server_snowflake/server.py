@@ -22,11 +22,17 @@ import yaml
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
 from snowflake.connector import DictCursor, connect
+from snowflake.core import Root
 
 import mcp_server_snowflake.tools as tools
 from mcp_server_snowflake.environment import (
     get_spcs_container_token,
     is_running_in_spcs_container,
+)
+from mcp_server_snowflake.object_manager.objects import (
+    SnowflakeClasses,
+    create_object,
+    drop_object,
 )
 from mcp_server_snowflake.utils import (
     cleanup_snowflake_service,
@@ -110,6 +116,7 @@ class SnowflakeService:
         self.unpack_service_specs()
         # Persist connection to avoid closing it after each request
         self.connection = self._get_persistent_connection()
+        self.root = Root(self.connection)
 
     def unpack_service_specs(self) -> None:
         """
@@ -502,6 +509,17 @@ def initialize_resources(snowflake_service: SnowflakeService, server: FastMCP):
 
 def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
     if snowflake_service is not None:
+        for object_type in SnowflakeClasses:
+            object_name = object_type.__name__.lower().replace("snowflake", "").lower()
+
+            @server.tool(name=f"create_{object_name}")
+            def create_object_tool(object_type: object_type):  # type: ignore
+                return create_object(object_type, snowflake_service.root)
+
+            @server.tool(name=f"drop_{object_name}")
+            def drop_object_tool(object_type: object_type):  # type: ignore
+                return drop_object(object_type, snowflake_service.root)
+
         # Add tools for each configured search service
         if snowflake_service.search_services:
             for service in snowflake_service.search_services:
