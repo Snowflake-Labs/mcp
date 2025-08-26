@@ -21,7 +21,7 @@ def list_semantic_views(
     statement = "SHOW SEMANTIC VIEWS"
 
     if like:
-        statement += f" LIKE '%{like}%'"
+        statement += f" LIKE '%{like.replace('%', '')}%'"
 
     if not database_name and not schema_name:
         statement += " IN ACCOUNT"
@@ -85,7 +85,7 @@ def show_semantic_expressions(
     statement = f"SHOW SEMANTIC {expression_type}"
 
     if like:
-        statement += f" LIKE '%{like}%'"
+        statement += f" LIKE '%{like.replace('%', '')}%'"
 
     if view_name:
         statement += " IN"
@@ -144,7 +144,7 @@ def write_semantic_view_query(
     facts: list[SemanticExpression] = [],
     where_clause: str = None,
     order_by: str = None,
-    limit: str = None,
+    limit: int | str = None,
 ):
     """
     Query a semantic view with comprehensive support for all SEMANTIC_VIEW clauses.
@@ -199,7 +199,7 @@ def write_semantic_view_query(
         statement += f" ORDER BY {order_by}"
 
     if limit:
-        statement += f" LIMIT {limit}"
+        statement += f" LIMIT {int(limit)}"
 
     try:
         return statement  # execute_query(statement, snowflake_service)
@@ -217,20 +217,21 @@ def query_semantic_view(
     facts: list[SemanticExpression] = [],
     where_clause: str = None,
     order_by: str = None,
-    limit: str = None,
+    limit: int | str = None,
 ):
-    statement = write_semantic_view_query(
-        view_name,
-        database_name,
-        schema_name,
-        dimensions,
-        metrics,
-        facts,
-        where_clause,
-        order_by,
-        limit,
-    )
     try:
+        statement = write_semantic_view_query(
+            view_name,
+            database_name,
+            schema_name,
+            dimensions,
+            metrics,
+            facts,
+            where_clause,
+            order_by,
+            limit,
+        )
+
         return execute_query(statement, snowflake_service)
     except Exception as e:
         raise SnowflakeException(tool="query_semantic_view", message=e)
@@ -244,13 +245,36 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
     def list_semantic_views_tool(
         database_name: Annotated[
             str,
-            Field(description="The name of the database to list semantic views in."),
+            Field(
+                description="The name of the database to list semantic views in. Omit to query account.",
+                default=None,
+            ),
         ],
         schema_name: Annotated[
-            str, Field(description="The name of the schema to list semantic views in.")
+            str,
+            Field(
+                description="The name of the schema to list semantic views in. Omit to query account.",
+                default=None,
+            ),
+        ],
+        like: Annotated[
+            str,
+            Field(
+                description="Filter semantic views by keyword in name. Case insensitive.",
+                default=None,
+            ),
+        ],
+        starts_with: Annotated[
+            str,
+            Field(
+                description="Filter semantic views by start of name. Case sensitive.",
+                default=None,
+            ),
         ],
     ):
-        return list_semantic_views(snowflake_service, database_name, schema_name)
+        return list_semantic_views(
+            snowflake_service, database_name, schema_name, like, starts_with
+        )
 
     @server.tool(
         name="describe_semantic_view",
@@ -296,9 +320,29 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
             str,
             Field(description="The name of the semantic view to show dimensions in."),
         ],
+        like: Annotated[
+            str,
+            Field(
+                description="Filter semantic views by keyword in name. Case insensitive.",
+                default=None,
+            ),
+        ],
+        starts_with: Annotated[
+            str,
+            Field(
+                description="Filter semantic views by start of name. Case sensitive.",
+                default=None,
+            ),
+        ],
     ):
         return show_semantic_expressions(
-            snowflake_service, "DIMENSIONS", database_name, schema_name, view_name
+            snowflake_service,
+            "DIMENSIONS",
+            database_name,
+            schema_name,
+            view_name,
+            like,
+            starts_with,
         )
 
     @server.tool(
@@ -317,9 +361,29 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
         view_name: Annotated[
             str, Field(description="The name of the semantic view to show metrics in.")
         ],
+        like: Annotated[
+            str,
+            Field(
+                description="Filter semantic views by keyword in name. Case insensitive.",
+                default=None,
+            ),
+        ],
+        starts_with: Annotated[
+            str,
+            Field(
+                description="Filter semantic views by start of name. Case sensitive.",
+                default=None,
+            ),
+        ],
     ):
         return show_semantic_expressions(
-            snowflake_service, "METRICS", database_name, schema_name, view_name
+            snowflake_service,
+            "METRICS",
+            database_name,
+            schema_name,
+            view_name,
+            like,
+            starts_with,
         )
 
     @server.tool(
@@ -348,7 +412,7 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
         )
 
     @server.tool(
-        name="write_semantic_view_tool",
+        name="write_semantic_view_query_tool",
         description=write_semantic_view_query_prompt,
     )
     def write_semantic_view_tool(
@@ -399,7 +463,7 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
             ),
         ],
         limit: Annotated[
-            int | None,
+            int | str | None,
             Field(
                 description="Optional LIMIT for number of rows to return.", default=None
             ),
@@ -469,7 +533,7 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
             ),
         ],
         limit: Annotated[
-            int | None,
+            int | str | None,
             Field(
                 description="Optional LIMIT for number of rows to return.", default=None
             ),
