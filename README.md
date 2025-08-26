@@ -12,6 +12,7 @@ The MCP server currently supports the below capabilities:
 - **[Cortex Agent](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents)**: (**Coming Soon**) Agentic orchestrator across structured and unstructured data retrieval
 - **Object Management**: Perform basic operations against Snowflake's most common objects such as creation, dropping, updating, and more.
 - **SQL Execution**: Run LLM-generated SQL managed by user-configured permissions.
+- **[Semantic View Querying](https://docs.snowflake.com/en/user-guide/views-semantic/overview)**: Discover and query Snowflake Semantic Views
 
 # Getting Started
 
@@ -238,6 +239,12 @@ Below are some examples of sqlglot expression types with accompanying Snowflake 
 | TruncateTable | `TRUNCATE TABLE my_table;` |
 | Update | `UPDATE my_table SET email = 'new.email@example.com' WHERE name = 'Jane Doe';` |
 | Use | `USE DATABASE my_database;` |
+
+# Semantic View Querying
+
+Several tools support the discovery and querying of [Snowflake Semantic Views](https://docs.snowflake.com/en/user-guide/views-semantic/overview) and their components.
+Semantic Views can be **listed** and **described**. In addition, you can **list their metrics and dimensions**.
+Lastly, you can **[query Semantic Views](https://docs.snowflake.com/en/user-guide/views-semantic/querying)** directly.
 
 # Troubleshooting
 
