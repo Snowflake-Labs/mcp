@@ -242,7 +242,7 @@ class SnowflakeService:
 
             # We are passing session_parameters and client_session_keep_alive
             # so we cannot rely on the connection to infer default connection name.
-            # So instead, if no expliit values passed via CLI, we replicate the same logic here
+            # So instead, if no explicit values passed via CLI, we replicate the same logic here
             if not connection_params:
                 connection_params = {
                     "connection_name": os.getenv(
