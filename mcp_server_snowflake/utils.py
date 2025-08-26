@@ -28,6 +28,19 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+def execute_query(statement: str, snowflake_service):
+    """Execute a Snowflake query and return the results using Python connector dictionary cursor."""
+    with snowflake_service.get_connection(
+        use_dict_cursor=True,
+        session_parameters=snowflake_service.get_query_tag_param(),
+    ) as (
+        con,
+        cur,
+    ):
+        cur.execute(statement)
+        return cur.fetchall()
+
+
 def sanitize_tool_name(service_name: str) -> str:
     """Sanitize service name to create a valid Python identifier for MCP tool name."""
     sanitized = re.sub(r"[^a-zA-Z0-9_]", "_", service_name)
