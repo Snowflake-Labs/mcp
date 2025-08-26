@@ -62,8 +62,10 @@ def create_or_alter_object(object_type: ObjectMetadata, root: Root):
         # First need to fetch the existing object
         existing_object = core_path[core_object.name].fetch()
         # Then update the existing object with the new properties
-        for key, value in core_object.model_dump().items():
-            if value is not None:
+        data = object_type.model_dump(exclude_unset=True)
+        # Update only non-None values
+        for key, value in data.items():
+            if value is not None and hasattr(existing_object, key):
                 setattr(existing_object, key, value)
         # Then create or alter the object
         core_path[core_object.name].create_or_alter(existing_object)
