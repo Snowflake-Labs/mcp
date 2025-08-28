@@ -267,28 +267,28 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
     )
     def list_semantic_views_tool(
         database_name: Annotated[
-            str,
+            str | None,
             Field(
                 description="The name of the database to list semantic views in. Omit to query account.",
                 default=None,
             ),
         ],
         schema_name: Annotated[
-            str,
+            str | None,
             Field(
                 description="The name of the schema to list semantic views in. Omit to query account.",
                 default=None,
             ),
         ],
         like: Annotated[
-            str,
+            str | None,
             Field(
                 description="Filter semantic views by keyword in name. Case insensitive.",
                 default=None,
             ),
         ],
         starts_with: Annotated[
-            str,
+            str | None,
             Field(
                 description="Filter semantic views by start of name. Case sensitive.",
                 default=None,
@@ -344,14 +344,14 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
             Field(description="The name of the semantic view to show dimensions in."),
         ],
         like: Annotated[
-            str,
+            str | None,
             Field(
                 description="Filter semantic views by keyword in name. Case insensitive.",
                 default=None,
             ),
         ],
         starts_with: Annotated[
-            str,
+            str | None,
             Field(
                 description="Filter semantic views by start of name. Case sensitive.",
                 default=None,
@@ -385,14 +385,14 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
             str, Field(description="The name of the semantic view to show metrics in.")
         ],
         like: Annotated[
-            str,
+            str | None,
             Field(
                 description="Filter semantic views by keyword in name. Case insensitive.",
                 default=None,
             ),
         ],
         starts_with: Annotated[
-            str,
+            str | None,
             Field(
                 description="Filter semantic views by start of name. Case sensitive.",
                 default=None,
