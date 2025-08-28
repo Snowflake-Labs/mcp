@@ -488,7 +488,7 @@ def get_login_params() -> dict:
         ],
         "passcode_in_password": [
             "--passcode-in-password",
-            False,
+            None,  # Default is False. Don't want to pass this as only explicit argument later on.
             "False by default. Set this to True if the MFA (Multi-Factor Authentication) passcode is embedded in the login password.",
         ],
         "passcode": [
@@ -513,7 +513,7 @@ def get_login_params() -> dict:
         ],
         "authenticator": [
             "--authenticator",
-            "snowflake",
+            None,  # Default is 'snowflake'. Don't want to pass this as only explicit argument later on.
             """Authenticator for Snowflake:
 
 snowflake (default) to use the internal Snowflake authenticator.

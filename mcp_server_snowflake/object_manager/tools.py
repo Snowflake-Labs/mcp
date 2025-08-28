@@ -61,9 +61,12 @@ def create_or_alter_object(object_type: ObjectMetadata, root: Root):
     try:
         # First need to fetch the existing object
         existing_object = core_path[core_object.name].fetch()
+        
         # Then update the existing object with the new properties
-        for key, value in core_object.model_dump().items():
-            if value is not None:
+        data = object_type.model_dump(exclude_unset=True)
+        # Update only non-None values
+        for key, value in data.items():
+            if value is not None and hasattr(existing_object, key):
                 setattr(existing_object, key, value)
         # Then create or alter the object
         core_path[core_object.name].create_or_alter(existing_object)
@@ -221,9 +224,13 @@ def validate_object_tool(
     ):  # Will also capture create_or_alter, which is intended
         func_type = "create"
     elif function_name.lower().startswith("drop"):
-        func_type = "create"
+        func_type = "drop"
     else:
-        return True
+        return ("", True)
+
+    # User has not added any permissions, so we default to disallowing all object actions
+    if len(sql_allow_list) == 0 and len(sql_disallow_list) == 0:
+        valid = False
 
     if func_type in sql_allow_list:
         valid = True

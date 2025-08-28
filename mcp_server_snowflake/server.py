@@ -31,9 +31,11 @@ from mcp_server_snowflake.environment import (
 )
 from mcp_server_snowflake.object_manager.tools import initialize_object_manager_tools
 from mcp_server_snowflake.query_manager.tools import initialize_query_manager_tool
+
 from mcp_server_snowflake.semantic_manager.tools import (
     initialize_semantic_manager_tools,
 )
+
 from mcp_server_snowflake.server_utils import initialize_middleware
 from mcp_server_snowflake.utils import (
     cleanup_snowflake_service,
@@ -45,8 +47,8 @@ from mcp_server_snowflake.utils import (
 
 # Used to quantify Snowflake usage
 server_name = "mcp-server-snowflake"
-tag_major_version = 0
-tag_minor_version = 4
+tag_major_version = 1
+tag_minor_version = 0
 query_tag = {"origin": "sf_sit", "name": "mcp_server"}
 
 logger = logging.getLogger(server_name)
@@ -260,6 +262,16 @@ class SnowflakeService:
             else:
                 logger.info("Using external authentication")
                 connection_params = self.connection_params.copy()
+
+            # We are passing session_parameters and client_session_keep_alive
+            # so we cannot rely on the connection to infer default connection name.
+            # So instead, if no explicit values passed via CLI, we replicate the same logic here
+            if not connection_params:
+                connection_params = {
+                    "connection_name": os.getenv(
+                        "SNOWFLAKE_DEFAULT_CONNECTION_NAME", "default"
+                    ),
+                }
 
             connection = connect(
                 **connection_params,
@@ -515,10 +527,13 @@ def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
     if snowflake_service is not None:
         # Add tools for object manager
         initialize_object_manager_tools(server, snowflake_service.root)
+
         # Add tools for query manager
         initialize_query_manager_tool(server, snowflake_service)
+        
         # Add tools for semantic manager
         initialize_semantic_manager_tools(server, snowflake_service)
+
         # Add tools for each configured search service
         if snowflake_service.search_services:
             for service in snowflake_service.search_services:

@@ -102,6 +102,11 @@ def validate_sql_type(
     # There may be a new unmapped type that is not in the allow/disallow lists. If the user has set Unknown to True, allow it.
     elif "unknown" in sql_allow_list:
         valid = True
+
+    # User has not added any permissions, so we default to disallowing all statements
+    elif len(sql_allow_list) == 0 and len(sql_disallow_list) == 0:
+        valid = False
+
     else:  # If not in allowed or disallowed and unknown in disallow or omitted, return error. User can always add to list as they find statements not otherwise allowed.
         valid = False
 
