@@ -18,11 +18,25 @@ The MCP server currently supports the below capabilities:
 
 ## Service Configuration
 
-A simple configuration file is used to create tooling for the various Cortex AI features and manage permitted capabilities in the SQL tool. An example can be seen at [services/tools_config.yaml](services/configuration.yaml) and a template is below. The path to this configuration file will be passed to the server and the contents used to create MCP server tools at startup.
+> [!NOTE]
+> We are aware of current tool count limits in most LLMs and MCP Clients and are working to consolidate out of the box tools without compromising on tool efficacy. Service configurations may change in future versions. In the meantime, please use `other_services` section in the configuration file to limit tool count.
+
+A simple configuration file is used to drive all tooling. An example can be seen at [services/configuration.yaml](services/configuration.yaml) and a template is below. The path to this configuration file will be passed to the server and the contents used to create MCP server tools at startup.
+
+**Cortex Services**
 
 Many Cortex Search and Cortex Analyst services can be added. Ideal descriptions are both highly descriptive and mutually exclusive.
+Only the explicitly listed Cortex services will be available as tools in the MCP client.
 
-In addition, the `sql_statement_permissions` section ensures that only approved statements. The list contains SQL expression types. Those marked with True are permitted while those marked with False are not permitted. Please see [SQL Execution](#sql-execution) for examples of each expression type.
+**Other Services**
+
+Other services include tooling for [object management](object-management), [query execution](sql-execution), and [semantic view usage](semantic-view-querying).
+These groups of tools can be enabled by setting them to True in the `other_services` section of the configuration file.
+
+**SQL Statement Permissions**
+
+The `sql_statement_permissions` section ensures that only approved statements are executed across any tools with access to change Snowflake objects.
+The list contains SQL expression types. Those marked with True are permitted while those marked with False are not permitted. Please see [SQL Execution](#sql-execution) for examples of each expression type.
 
 ```
 search_services: # List all Cortex Search services
@@ -49,6 +63,10 @@ analyst_services: # List all Cortex Analyst semantic models/views
     semantic_model: "<semantic_yaml_or_view>" # Fully-qualify semantic YAML model or Semantic View
     description: > # Should start with "Analyst service that ..."
       "<Analyst service that ...>"
+other_services: # Set desired tool groups to True to enable tools for that group
+  object_manager: True # Perform basic operations against Snowflake's most common objects such as creation, dropping, updating, and more.
+  query_manager: True # Run LLM-generated SQL managed by user-configured permissions.
+  semantic_manager: True # Discover and query Snowflake Semantic Views and their components.
 sql_statement_permissions: # List SQL statements to explicitly allow (True) or disallow (False).
   # - All: True # To allow everything, uncomment and set All: True.
   - Alter: True
@@ -183,11 +201,23 @@ For prerequisites, environment setup, step-by-step guide and instructions, pleas
 
 <img src="https://sfquickstarts.s3.us-west-1.amazonaws.com/misc/mcp/dash-dark-mcp-copilot.gif"/>
 
+# Cortex Services
+
+Instances of Cortex Search (in `search_services` section) and Cortex Analyst (in `analyst_services` section) of the configuration file will be served as tools. Leave these sections blank to omit such tools.
+
+Ensure all services have accurate databases and schema names. Ideal descriptions are both highly descriptive and mutually exclusive.
+Columns and limits are optional for search services.
+
+The `semantic_model` value in analyst services should be a fully-qualified semantic view OR semantic YAML file in a Snowflake stage:
+- For a semantic view: `MY_DATABASE.MY_SCHEMA.MY_SEMANTIC_VIEW`
+- For a semantic YAML file: `@MY_DATABASE.MY_SCHEMA.MY_STAGE/my_semantic_file.yaml` (**Note the `@`.**)
+
 # Object Management
 
 The MCP server includes dozens of tools narrowly scoped to fulfill basic operation management. It is recommended to use Snowsight directly for advanced object management.
 
 The MCP server currently supports **creating**, **dropping**, **creating or altering**, **describing**, and **listing** the below object types.
+**To enable these tools, set `object_manager` to True in the configuration file under `other_services`.**
 
 ```
 - Database
@@ -202,17 +232,18 @@ The MCP server currently supports **creating**, **dropping**, **creating or alte
 - Image Repository
 ```
 
-Please note that these tools are also governed by those captured in the configuration file under `sql_statement_permissions`.
+Please note that these tools are also governed by permissions captured in the configuration file under `sql_statement_permissions`.
 Object management tools to create and create or alter objects are governed by the `Create` permission. Object dropping is governed by the `Drop` permission.
 
 It is likely that more actions and objects will be included in future releases.
 
 # SQL Execution
 
-The general SQL tool will provide a way to execute generic SQL statements generated by the MCP client. Users have full control over the types of SQL statement that are approved by setting the allowed and/or disallowed statement types in the configuration file.
+The general SQL tool will provide a way to execute generic SQL statements generated by the MCP client. Users have full control over the types of SQL statement that are approved in the configuration file.
 
 Listed in the configuration file under `sql_statement_permissions` are [sqlglot expression types](https://sqlglot.com/sqlglot/expressions.html). Those marked as False will be stopped before execution. Those marked with True will be executed (or prompt the user for execution based on the MCP client settings).
 
+**To enable the SQL execution tool, set `query_manager` to True in the configuration file under `other_services`.**
 **To allow all SQL expressions to pass the additional validation, set `All` to True.**
 
 Not all Snowflake SQL commands are mapped in sqlglot and you may find some obscure commands have yet to be captured in the configuration file.
@@ -246,6 +277,8 @@ Several tools support the discovery and querying of [Snowflake Semantic Views](h
 Semantic Views can be **listed** and **described**. In addition, you can **list their metrics and dimensions**.
 Lastly, you can **[query Semantic Views](https://docs.snowflake.com/en/user-guide/views-semantic/querying)** directly.
 
+**To enable these tools, set `semantic_manager` to True in the configuration file under `other_services`.**
+
 # Troubleshooting
 
 ## Running MCP Inspector
@@ -260,6 +293,11 @@ The [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) is sug
 
 - The MCP server supports all connection methods supported by the Snowflake Python Connector.
 See [Connecting to Snowflake with the Python Connector](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect) for more information.
+
+#### I'm receiving a tool limit error/warning.
+
+- While LLMs' support for more tools will likely grow, we are working to consolidate tools to reduce the total number.
+In the meantime, please set unwanted tool groups to False in the configuration file.
 
 #### Can I use a Programmatic Access Token (PAT) instead of a password?
 

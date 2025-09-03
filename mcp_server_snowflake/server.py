@@ -109,6 +109,9 @@ class SnowflakeService:
         self.agent_services = []
         self.sql_statement_allowed = []
         self.sql_statement_disallowed = []
+        self.object_manager = False
+        self.query_manager = False
+        self.semantic_manager = False
         self.default_session_parameters: Dict[str, Any] = {}
         self.query_tag = query_tag if query_tag is not None else None
         self.tag_major_version = (
@@ -131,8 +134,7 @@ class SnowflakeService:
         Load and parse service specifications from configuration file.
 
         Reads the YAML configuration file and extracts service specifications
-        for search, analyst, and agent services. Also sets the default
-        completion model.
+        for all services managed by YAML configuration.
         """
         try:
             with open(self.service_config_file, "r") as file:
@@ -160,6 +162,11 @@ class SnowflakeService:
                     service_config.get("sql_statement_permissions", [])
                 )
             )
+            other_services = service_config.get("other_services", {})
+            if other_services is not None:
+                self.object_manager = other_services.get("object_manager", False)
+                self.query_manager = other_services.get("query_manager", False)
+                self.semantic_manager = other_services.get("semantic_manager", False)
 
         except Exception as e:
             logger.error(f"Error extracting service specifications: {e}")
@@ -524,13 +531,16 @@ def initialize_resources(snowflake_service: SnowflakeService, server: FastMCP):
 def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
     if snowflake_service is not None:
         # Add tools for object manager
-        initialize_object_manager_tools(server, snowflake_service.root)
+        if snowflake_service.object_manager:
+            initialize_object_manager_tools(server, snowflake_service.root)
 
         # Add tools for query manager
-        initialize_query_manager_tool(server, snowflake_service)
+        if snowflake_service.query_manager:
+            initialize_query_manager_tool(server, snowflake_service)
 
         # Add tools for semantic manager
-        initialize_semantic_manager_tools(server, snowflake_service)
+        if snowflake_service.semantic_manager:
+            initialize_semantic_manager_tools(server, snowflake_service)
 
         # Add tools for each configured search service
         if snowflake_service.search_services:

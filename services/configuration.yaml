@@ -22,6 +22,10 @@ analyst_services: # List all Cortex Analyst semantic models/views
     semantic_model: "<semantic_yaml_or_view>" # Fully-qualify semantic YAML model or Semantic View
     description: > # Should start with "Analyst service that ..."
       "<Analyst service that ...>"
+other_services: # Set desired tool groups to True to enable tools for that group
+  object_manager: True # Perform basic operations against Snowflake's most common objects such as creation, dropping, updating, and more.
+  query_manager: True # Run LLM-generated SQL managed by user-configured permissions.
+  semantic_manager: True # Discover and query Snowflake Semantic Views and their components.
 sql_statement_permissions: # List SQL statements to explicitly allow (True) or disallow (False).
   # - All: True # To allow everything, uncomment and set All: True.
   - Alter: True
