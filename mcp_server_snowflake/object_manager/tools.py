@@ -22,7 +22,7 @@ from mcp_server_snowflake.object_manager.objects import (
 from mcp_server_snowflake.object_manager.prompts import (
     get_object_mgmt_prompt,
 )
-from mcp_server_snowflake.utils import SnowflakeException
+from mcp_server_snowflake.utils import SnowflakeException, execute_query
 
 
 def get_class_name(object_type: Any) -> str:
@@ -91,17 +91,54 @@ def describe_object(snowflake_object: SnowflakeObject, root: Root):
         raise SnowflakeException(tool="describe_object", message=e)
 
 
-def list_objects(snowflake_object: SnowflakeObject, root: Root, like: str = None):
-    core_path = snowflake_object.get_core_path(root=root)
+def list_objects(
+    snowflake_service,
+    object_type: supported_objects,
+    database_name: str = None,
+    schema_name: str = None,
+    like: str = None,
+    starts_with: str = None,
+):
+    if object_type == "image_repository":
+        object_name = "image repositories"
+    elif object_type == "compute_pool":
+        object_name = "compute pools"
+    else:
+        object_name = f"{object_type}s"
+
+    statement = f"SHOW {object_name}"
+
+    if like:
+        statement += f" LIKE '%{like.replace('%', '')}%'"
+
+    if ["database", "compute_pool", "role", "user"]:
+        pass
+    elif not database_name and not schema_name:
+        statement += " IN ACCOUNT"
+    elif database_name and schema_name:
+        statement += f" IN SCHEMA {database_name}.{schema_name}"
+    elif database_name:
+        statement += f" IN DATABASE {database_name}"
+    elif schema_name:
+        statement += f" IN SCHEMA {schema_name}"
+    else:
+        raise SnowflakeException(
+            tool="list_semantic_views",
+            message="Please specify a database, database + schema, or neither to query the account.",
+        )
+
+    if starts_with:
+        statement += f" STARTS WITH '{starts_with}'"
+
     try:
-        # Try with limit first (works for most object types)
-        try:
-            return core_path.iter(like=like, limit=100)
-        except TypeError:
-            # Fall back to no limit for object types that don't support it (like warehouses)
-            return core_path.iter(like=like)
+        result = execute_query(statement, snowflake_service)
+        # Semantic view metadata has unnecessary extension key
+        if len(result) > 0:
+            return result[0:1000]  # Limit to 1000 results
+        else:
+            f"No matching {object_name} found."
     except Exception as e:
-        raise SnowflakeException(tool="list_objects", message=e)
+        raise SnowflakeException(tool="list_semantic_views", message=e)
 
 
 def parse_object(target_object: Any, obj_type: supported_objects):
@@ -135,14 +172,17 @@ def parse_object(target_object: Any, obj_type: supported_objects):
             else:
                 raise ValueError(f"Invalid object type: {obj_type}")
             parsed_data = json.loads(target_object)
-            target_object = obj_type(**parsed_data)
+            # target_object = obj_type(**parsed_data)
+            return obj_type(**parsed_data)
         except Exception as e:
             raise e
+    else:
+        return obj_type(**target_object)
+    # return target_object
 
-    return target_object
 
-
-def initialize_object_manager_tools(server: FastMCP, root: Root):
+def initialize_object_manager_tools(server: FastMCP, snowflake_service):
+    root = snowflake_service.root
     supported_objects_list = list(get_args(supported_objects))
     object_type_annotation = Annotated[
         supported_objects,
@@ -216,11 +256,31 @@ def initialize_object_manager_tools(server: FastMCP, root: Root):
     )
     def list_objects_tool(
         object_type: object_type_annotation,
-        target_object: target_object_annotation,
-        like: str | None = None,
+        database_name: str | None = None,
+        schema_name: str | None = None,
+        like: Annotated[
+            str | None,
+            Field(
+                description="Filter objects by keyword in name. Uses case-insensitive pattern matching, with support for SQL wildcard characters (% and _).",
+                default=None,
+            ),
+        ] = None,
+        starts_with: Annotated[
+            str | None,
+            Field(
+                description="Filter objects by start of name. Case sensitive. Ignored for warehouses.",
+                default=None,
+            ),
+        ] = None,
     ):
-        target_object = parse_object(target_object, object_type)
-        return list_objects(target_object, root, like)
+        return list_objects(
+            snowflake_service,
+            object_type,
+            database_name,
+            schema_name,
+            like,
+            starts_with,
+        )
 
 
 def validate_object_tool(

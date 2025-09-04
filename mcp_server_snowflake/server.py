@@ -537,7 +537,7 @@ def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
     if snowflake_service is not None:
         # Add tools for object manager
         if snowflake_service.object_manager:
-            initialize_object_manager_tools(server, snowflake_service.root)
+            initialize_object_manager_tools(server, snowflake_service)
 
         # Add tools for query manager
         if snowflake_service.query_manager:
