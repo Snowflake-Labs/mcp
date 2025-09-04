@@ -1,18 +1,2 @@
-def create_object_prompt(object_type: str):
-    return f"""Create a new Snowflake {object_type} object."""
-
-
-def drop_object_prompt(object_type: str):
-    return f"""Drop a Snowflake {object_type} object."""
-
-
-def create_or_alter_object_prompt(object_type: str):
-    return f"""Update a Snowflake {object_type} object if it exists. Otherwise, create a new Snowflake {object_type} object."""
-
-
-def describe_object_prompt(object_type: str):
-    return f"""Describe a Snowflake {object_type} object."""
-
-
-def list_objects_prompt(object_type: str):
-    return f"""List Snowflake {object_type} objects."""
+def get_object_mgmt_prompt(action: str, object_types: list[str]):
+    return f"""Generic tool to {action.lower()} a Snowflake object including {", ".join(object_types)}."""

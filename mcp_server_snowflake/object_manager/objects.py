@@ -1,5 +1,5 @@
 import json
-from typing import Literal
+from typing import Literal, TypeAlias
 
 from pydantic import BaseModel, Field, model_validator
 from snowflake.core import Root
@@ -338,15 +338,30 @@ class SnowflakeImageRepository(ObjectMetadata):
         )
 
 
-SnowflakeClasses = [
-    SnowflakeDatabase,
-    SnowflakeSchema,
-    SnowflakeTable,
-    SnowflakeView,
-    SnowflakeWarehouse,
-    SnowflakeComputePool,
-    SnowflakeRole,
-    SnowflakeStage,
-    SnowflakeUser,
-    SnowflakeImageRepository,
+# Used for server tool type hints and unpacked into tool descriptions
+supported_objects = Literal[
+    "database",
+    "schema",
+    "table",
+    "view",
+    "warehouse",
+    "compute_pool",
+    "role",
+    "stage",
+    "user",
+    "image_repository",
 ]
+
+# Used for server tool parameter input Annotations
+SnowflakeObject: TypeAlias = (
+    SnowflakeDatabase
+    | SnowflakeSchema
+    | SnowflakeTable
+    | SnowflakeView
+    | SnowflakeWarehouse
+    | SnowflakeComputePool
+    | SnowflakeRole
+    | SnowflakeStage
+    | SnowflakeUser
+    | SnowflakeImageRepository
+)

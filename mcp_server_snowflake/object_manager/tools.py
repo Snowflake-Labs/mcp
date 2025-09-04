@@ -1,20 +1,26 @@
 import json
-from typing import Annotated, Any, Literal, Type
+from typing import Annotated, Any, Literal, Union, get_args
 
 from fastmcp import FastMCP
 from pydantic import Field
 from snowflake.core import CreateMode, Root
 
 from mcp_server_snowflake.object_manager.objects import (
-    ObjectMetadata,
-    SnowflakeClasses,
+    SnowflakeComputePool,
+    SnowflakeDatabase,
+    SnowflakeImageRepository,
+    SnowflakeObject,
+    SnowflakeRole,
+    SnowflakeSchema,
+    SnowflakeStage,
+    SnowflakeTable,
+    SnowflakeUser,
+    SnowflakeView,
+    SnowflakeWarehouse,
+    supported_objects,
 )
 from mcp_server_snowflake.object_manager.prompts import (
-    create_object_prompt,
-    create_or_alter_object_prompt,
-    describe_object_prompt,
-    drop_object_prompt,
-    list_objects_prompt,
+    get_object_mgmt_prompt,
 )
 from mcp_server_snowflake.utils import SnowflakeException
 
@@ -24,7 +30,7 @@ def get_class_name(object_type: Any) -> str:
 
 
 def create_object(
-    object_type: ObjectMetadata,
+    snowflake_object: SnowflakeObject,
     root: Root,
     mode: Literal["error_if_exists", "replace", "if_not_exists"] = "error_if_exists",
 ):
@@ -36,8 +42,8 @@ def create_object(
         create_mode = CreateMode.if_not_exists
     else:
         create_mode = CreateMode.if_not_exists
-    core_object = object_type.get_core_object()
-    core_path = object_type.get_core_path(root=root)
+    core_object = snowflake_object.get_core_object()
+    core_path = snowflake_object.get_core_path(root=root)
     try:
         core_path.create(core_object, mode=create_mode)
         return f"Created {get_class_name(core_object)} {core_object.name}."
@@ -45,9 +51,9 @@ def create_object(
         raise SnowflakeException(tool="create_object", message=e)
 
 
-def drop_object(object_type: ObjectMetadata, root: Root, if_exists: bool = False):
-    core_object = object_type.get_core_object()
-    core_path = object_type.get_core_path(root=root)
+def drop_object(snowflake_object: SnowflakeObject, root: Root, if_exists: bool = False):
+    core_object = snowflake_object.get_core_object()
+    core_path = snowflake_object.get_core_path(root=root)
     try:
         core_path[core_object.name].drop(if_exists=if_exists)
         return f"Dropped {get_class_name(core_object)} {core_object.name}."
@@ -55,15 +61,15 @@ def drop_object(object_type: ObjectMetadata, root: Root, if_exists: bool = False
         raise SnowflakeException(tool="drop_object", message=e)
 
 
-def create_or_alter_object(object_type: ObjectMetadata, root: Root):
-    core_object = object_type.get_core_object()
-    core_path = object_type.get_core_path(root=root)
+def create_or_alter_object(snowflake_object: SnowflakeObject, root: Root):
+    core_object = snowflake_object.get_core_object()
+    core_path = snowflake_object.get_core_path(root=root)
     try:
         # First need to fetch the existing object
         existing_object = core_path[core_object.name].fetch()
 
         # Then update the existing object with the new properties
-        data = object_type.model_dump(exclude_unset=True)
+        data = snowflake_object.model_dump(exclude_unset=True)
         # Update only non-None values
         for key, value in data.items():
             if value is not None and hasattr(existing_object, key):
@@ -76,17 +82,17 @@ def create_or_alter_object(object_type: ObjectMetadata, root: Root):
         raise SnowflakeException(tool="create_or_alter_object", message=e)
 
 
-def describe_object(object_type: ObjectMetadata, root: Root):
-    core_object = object_type.get_core_object()
-    core_path = object_type.get_core_path(root=root)
+def describe_object(snowflake_object: SnowflakeObject, root: Root):
+    core_object = snowflake_object.get_core_object()
+    core_path = snowflake_object.get_core_path(root=root)
     try:
         return core_path[core_object.name].fetch().to_dict()
     except Exception as e:
         raise SnowflakeException(tool="describe_object", message=e)
 
 
-def list_objects(object_type: ObjectMetadata, root: Root, like: str = None):
-    core_path = object_type.get_core_path(root=root)
+def list_objects(snowflake_object: SnowflakeObject, root: Root, like: str = None):
+    core_path = snowflake_object.get_core_path(root=root)
     try:
         # Try with limit first (works for most object types)
         try:
@@ -98,7 +104,7 @@ def list_objects(object_type: ObjectMetadata, root: Root, like: str = None):
         raise SnowflakeException(tool="list_objects", message=e)
 
 
-def parse_object(target_object: Any, obj_type: Type[ObjectMetadata], tool_name: str):
+def parse_object(target_object: Any, obj_type: supported_objects):
     """Parse a string into a Pydantic model.
     If the target_object is a string, parse it into a Pydantic model.
     If the target_object is already a Pydantic model, return it.
@@ -106,109 +112,115 @@ def parse_object(target_object: Any, obj_type: Type[ObjectMetadata], tool_name: 
     """
     if isinstance(target_object, str):
         try:
+            if obj_type == "database":
+                obj_type = SnowflakeDatabase
+            elif obj_type == "schema":
+                obj_type = SnowflakeSchema
+            elif obj_type == "table":
+                obj_type = SnowflakeTable
+            elif obj_type == "view":
+                obj_type = SnowflakeView
+            elif obj_type == "warehouse":
+                obj_type = SnowflakeWarehouse
+            elif obj_type == "compute_pool":
+                obj_type = SnowflakeComputePool
+            elif obj_type == "role":
+                obj_type = SnowflakeRole
+            elif obj_type == "stage":
+                obj_type = SnowflakeStage
+            elif obj_type == "user":
+                obj_type = SnowflakeUser
+            elif obj_type == "image_repository":
+                obj_type = SnowflakeImageRepository
+            else:
+                raise ValueError(f"Invalid object type: {obj_type}")
             parsed_data = json.loads(target_object)
             target_object = obj_type(**parsed_data)
         except Exception as e:
-            raise SnowflakeException(tool=tool_name, message=e)
+            raise e
 
     return target_object
 
 
 def initialize_object_manager_tools(server: FastMCP, root: Root):
-    # Create a closure that captures the current object_type
-    def create_tools_for_type(obj_type, obj_name):
-        @server.tool(
-            name=f"create_{obj_name}",
-            description=create_object_prompt(obj_name),
-        )
-        def create_object_tool(
-            # Allow both object and string inputs - Some LLMs still pass as JSON string
-            target_object: Annotated[
-                obj_type | str,
-                Field(
-                    description="Always pass properties of target_object as an object, not a string"
-                ),
-            ],
-            mode: Literal[
-                "error_if_exists", "replace", "if_not_exists"
-            ] = "error_if_exists",
-        ):
-            # If string is passed, parse JSON and create object
-            target_object = parse_object(target_object, obj_type, f"create_{obj_name}")
-            return create_object(target_object, root, mode)
+    supported_objects_list = list(get_args(supported_objects))
+    object_type_annotation = Annotated[
+        supported_objects,
+        Field(
+            description=f"Type of Snowflake object. One of {', '.join(supported_objects_list)}"
+        ),
+    ]
+    # Extract union members from SnowflakeObject TypeAlias for Pydantic schema generation
+    # (TypeAlias doesn't work well with FastMCP/Pydantic v2, but explicit Union does)
+    target_object_annotation = Annotated[
+        Union[
+            str, *get_args(SnowflakeObject)
+        ],  # Allow both object and string inputs - Some LLMs still pass as JSON string
+        Field(
+            description="Always pass properties of target_object as an object, not a string"
+        ),
+    ]
 
-        @server.tool(
-            name=f"drop_{obj_name}",
-            description=drop_object_prompt(obj_name),
-        )
-        def drop_object_tool(
-            target_object: Annotated[
-                obj_type | str,
-                Field(
-                    description="Always pass properties of target_object as an object, not a string"
-                ),
-            ],
-            if_exists: bool = False,
-        ):
-            target_object = parse_object(target_object, obj_type, f"drop_{obj_name}")
-            drop_object(target_object, root, if_exists)
-            return f"Dropped {obj_name} {target_object.name}."
+    @server.tool(
+        name="create_object",
+        description=get_object_mgmt_prompt("create", supported_objects_list),
+    )
+    def create_object_tool(
+        object_type: object_type_annotation,
+        target_object: target_object_annotation,
+        mode: Literal[
+            "error_if_exists", "replace", "if_not_exists"
+        ] = "error_if_exists",
+    ):
+        # If string is passed, parse JSON and create object
+        target_object = parse_object(target_object, object_type)
+        return create_object(target_object, root, mode)
 
-        @server.tool(
-            name=f"create_or_alter_{obj_name}",
-            description=create_or_alter_object_prompt(obj_name),
-        )
-        def create_or_alter_object_tool(
-            target_object: Annotated[
-                obj_type | str,
-                Field(
-                    description="Always pass properties of target_object as an object, not a string"
-                ),
-            ],
-        ):
-            target_object = parse_object(
-                target_object, obj_type, f"create_or_alter_{obj_name}"
-            )
-            return create_or_alter_object(target_object, root)
+    @server.tool(
+        name="drop_object",
+        description=get_object_mgmt_prompt("drop", supported_objects_list),
+    )
+    def drop_object_tool(
+        object_type: object_type_annotation,
+        target_object: target_object_annotation,
+        if_exists: bool = False,
+    ):
+        target_object = parse_object(target_object, object_type)
+        return drop_object(target_object, root, if_exists)
 
-        @server.tool(
-            name=f"describe_{obj_name}",
-            description=describe_object_prompt(obj_name),
-        )
-        def describe_object_tool(
-            target_object: Annotated[
-                obj_type | str,
-                Field(
-                    description="Always pass properties of target_object as an object, not a string"
-                ),
-            ],
-        ):
-            target_object = parse_object(
-                target_object, obj_type, f"describe_{obj_name}"
-            )
-            return describe_object(target_object, root)
+    @server.tool(
+        name="create_or_alter_object",
+        description=get_object_mgmt_prompt("create_or_alter", supported_objects_list),
+    )
+    def create_or_alter_object_tool(
+        object_type: object_type_annotation,
+        target_object: target_object_annotation,
+    ):
+        target_object = parse_object(target_object, object_type)
+        return create_or_alter_object(target_object, root)
 
-        @server.tool(
-            name=f"list_{obj_name}s",
-            description=list_objects_prompt(obj_name),
-        )
-        def list_objects_tool(
-            target_object: Annotated[
-                obj_type | str,
-                Field(
-                    description="Always pass properties of target_object as an object, not a string"
-                ),
-            ],
-            like: str | None = None,
-        ):
-            target_object = parse_object(target_object, obj_type, f"list_{obj_name}s")
-            return list_objects(target_object, root, like)
+    @server.tool(
+        name="describe_object",
+        description=get_object_mgmt_prompt("describe", supported_objects_list),
+    )
+    def describe_object_tool(
+        object_type: object_type_annotation,
+        target_object: target_object_annotation,
+    ):
+        target_object = parse_object(target_object, object_type)
+        return describe_object(target_object, root)
 
-    for object_type in SnowflakeClasses:
-        object_name = object_type.__name__.lower().replace("snowflake", "")
-
-        # Call the closure to create tools for this specific type
-        create_tools_for_type(object_type, object_name)
+    @server.tool(
+        name="list_objects",
+        description=get_object_mgmt_prompt("list", supported_objects_list),
+    )
+    def list_objects_tool(
+        object_type: object_type_annotation,
+        target_object: target_object_annotation,
+        like: str | None = None,
+    ):
+        target_object = parse_object(target_object, object_type)
+        return list_objects(target_object, root, like)
 
 
 def validate_object_tool(
