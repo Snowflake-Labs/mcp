@@ -202,7 +202,7 @@ def write_semantic_view_query(
         statement += f" LIMIT {int(limit)}"
 
     try:
-        return statement  # execute_query(statement, snowflake_service)
+        return statement
     except Exception as e:
         raise SnowflakeException(tool="write_semantic_view_query", message=e)
 
