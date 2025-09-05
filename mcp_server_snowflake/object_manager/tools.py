@@ -111,9 +111,9 @@ def list_objects(
     if like:
         statement += f" LIKE '%{like.replace('%', '')}%'"
 
-    if ["database", "compute_pool", "role", "user"]:
+    if object_type in ["database", "compute_pool", "role", "user"]:
         pass
-    elif not database_name and not schema_name:
+    elif database_name is None and schema_name is None:
         statement += " IN ACCOUNT"
     elif database_name and schema_name:
         statement += f" IN SCHEMA {database_name}.{schema_name}"
@@ -123,7 +123,7 @@ def list_objects(
         statement += f" IN SCHEMA {schema_name}"
     else:
         raise SnowflakeException(
-            tool="list_semantic_views",
+            tool="list_objects",
             message="Please specify a database, database + schema, or neither to query the account.",
         )
 
@@ -132,11 +132,11 @@ def list_objects(
 
     try:
         result = execute_query(statement, snowflake_service)
-        # Semantic view metadata has unnecessary extension key
+
         if len(result) > 0:
             return result[0:1000]  # Limit to 1000 results
         else:
-            f"No matching {object_name} found."
+            return f"No matching {object_name} found."
     except Exception as e:
         raise SnowflakeException(tool="list_semantic_views", message=e)
 
