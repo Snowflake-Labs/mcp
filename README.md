@@ -18,9 +18,6 @@ The MCP server currently supports the below capabilities:
 
 ## Service Configuration
 
-> [!NOTE]
-> We are aware of current tool count limits in most LLMs and MCP Clients and are working to consolidate out of the box tools without compromising on tool efficacy. Service configurations may change in future versions. In the meantime, please use `other_services` section in the configuration file to limit tool count.
-
 A simple configuration file is used to drive all tooling. An example can be seen at [services/configuration.yaml](services/configuration.yaml) and a template is below. The path to this configuration file will be passed to the server and the contents used to create MCP server tools at startup.
 
 **Cortex Services**
@@ -296,8 +293,8 @@ See [Connecting to Snowflake with the Python Connector](https://docs.snowflake.c
 
 #### I'm receiving a tool limit error/warning.
 
-- While LLMs' support for more tools will likely grow, we are working to consolidate tools to reduce the total number.
-In the meantime, please set unwanted tool groups to False in the configuration file.
+- While LLMs' support for more tools will likely grow, you can hide tool groups by setting them to False in the configuration file.
+Only listed Cortex services will be made into tools as well.
 
 #### Can I use a Programmatic Access Token (PAT) instead of a password?
 
