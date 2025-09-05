@@ -172,13 +172,11 @@ def parse_object(target_object: Any, obj_type: supported_objects):
             else:
                 raise ValueError(f"Invalid object type: {obj_type}")
             parsed_data = json.loads(target_object)
-            # target_object = obj_type(**parsed_data)
             return obj_type(**parsed_data)
         except Exception as e:
             raise e
     else:
         return obj_type(**target_object)
-    # return target_object
 
 
 def initialize_object_manager_tools(server: FastMCP, snowflake_service):
