@@ -176,7 +176,7 @@ def parse_object(target_object: Any, obj_type: supported_objects):
         except Exception as e:
             raise e
     else:
-        return obj_type(**target_object)
+        return target_object
 
 
 def initialize_object_manager_tools(server: FastMCP, snowflake_service):
