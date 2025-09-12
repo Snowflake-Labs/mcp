@@ -1,26 +1,22 @@
 search_services: # List all Cortex Search services
   - service_name: "<service_name>"
-    description: > # Should start with "Search service that ..."
+    description: > # Describe contents of the search service"
       "<Search services that ...>"
     database_name: "<database_name>"
     schema_name: "<schema_name>"
-    columns: [] # Optional: List of columns to return for each relevant result (default: [])
-    limit: 10 # Optional: Limit on the number of results to return (default: 10)
   - service_name: "<service_name>"
-    description: > # Should start with "Search service that ..."
+    description: > # Describe contents of the search service"
       "<Search services that ...>"
     database_name: "<database_name>"
     schema_name: "<schema_name>"
-    columns: [] # Optional: List of columns to return for each relevant result (default: [])
-    limit: 10 # Optional: Limit on the number of results to return (default: 10)
 analyst_services: # List all Cortex Analyst semantic models/views
   - service_name: "<service_name>" # Create descriptive name for the service
     semantic_model: "<semantic_yaml_or_view>" # Fully-qualify semantic YAML model or Semantic View
-    description: > # Should start with "Analyst service that ..."
+    description: > # Describe contents of the analyst service"
       "<Analyst service that ...>"
   - service_name: "<service_name>" # Create descriptive name for the service
     semantic_model: "<semantic_yaml_or_view>" # Fully-qualify semantic YAML model or Semantic View
-    description: > # Should start with "Analyst service that ..."
+    description: > # Describe contents of the analyst service"
       "<Analyst service that ...>"
 other_services: # Set desired tool groups to True to enable tools for that group
   object_manager: True # Perform basic operations against Snowflake's most common objects such as creation, dropping, updating, and more.

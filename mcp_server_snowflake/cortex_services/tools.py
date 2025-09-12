@@ -12,9 +12,14 @@
 from typing import Annotated, Optional
 
 import requests
+from fastmcp import FastMCP
 from pydantic import Field
 
-import mcp_server_snowflake.cortex_services.prompts as prompts
+from mcp_server_snowflake.cortex_services.prompts import (
+    cortex_search_filter_description,
+    get_cortex_analyst_description,
+    get_cortex_search_description,
+)
 from mcp_server_snowflake.environment import construct_snowflake_post
 from mcp_server_snowflake.utils import SnowflakeException, SnowflakeResponse
 
@@ -102,67 +107,6 @@ async def query_cortex_search(
         )
 
 
-def create_search_wrapper(**kwargs):
-    # Extract default values from service configuration
-    service_details = kwargs.get("service_details", {})
-    default_columns = service_details.get("columns", [])
-    default_limit = service_details.get("limit", 10)
-
-    async def search_wrapper(
-        query: Annotated[
-            str, Field(description="User query to search in search service")
-        ],
-        columns: Annotated[
-            list[str],
-            Field(
-                description="Optional list of columns to return for each relevant result in the response"
-            ),
-        ] = default_columns,
-        filter_query: Annotated[
-            dict, Field(description=prompts.cortex_search_filter_description)
-        ] = {},
-    ):
-        """
-        Search using Cortex Search Service.
-
-        Parameters
-        ----------
-        query : str
-            The search query string to submit to Cortex Search
-        columns : list[str], optional
-            List of columns to return for each relevant result, by default []
-        filter_query : dict, optional
-            Filter query to apply to search results, by default {}
-
-        Returns
-        -------
-        dict
-            JSON response from the Cortex Search API containing search results
-
-        Raises
-        ------
-        SnowflakeException
-            If the API request fails or returns an error status code
-        """
-
-        if kwargs.get("snowflake_service") and kwargs.get("service_details"):
-            snowflake_service = kwargs.get("snowflake_service")
-            service_details = kwargs.get("service_details")
-
-            return await query_cortex_search(
-                snowflake_service=snowflake_service,
-                query=query,
-                columns=columns,
-                filter_query=filter_query,
-                service_name=service_details.get("service_name"),
-                database_name=service_details.get("database_name"),
-                schema_name=service_details.get("schema_name"),
-                limit=default_limit,
-            )
-
-    return search_wrapper
-
-
 @sfse.snowflake_response(api="analyst")
 async def query_cortex_analyst(
     snowflake_service,
@@ -243,42 +187,82 @@ async def query_cortex_analyst(
         )
 
 
-def create_cortex_analyst_wrapper(**kwargs):
-    async def cortex_analyst_wrapper(
-        query: Annotated[
-            str,
-            Field(
-                description="Rephrased natural language query to submit to Cortex Analyst"
+def initialize_cortex_search_tool(server: FastMCP, snowflake_service):
+    if snowflake_service.search_services:
+
+        @server.tool(
+            name="cortex_search",
+            description=get_cortex_search_description(
+                snowflake_service.search_services
             ),
-        ],
-    ):
-        """
-        Query Snowflake Cortex Analyst service for natural language to SQL conversion.
-
-        Parameters
-        ----------
-        query : str
-            The natural language query string to submit to Cortex Analyst
-
-        Returns
-        -------
-        dict
-            JSON response from the Cortex Analyst API containing the generated SQL and related information
-
-        Raises
-        ------
-        SnowflakeException
-            If the API request fails or returns an error status code
-        """
-
-        if kwargs.get("snowflake_service") and kwargs.get("service_details"):
-            snowflake_service = kwargs.get("snowflake_service")
-            service_details = kwargs.get("service_details")
-
-            return await query_cortex_analyst(
+        )
+        def run_cortex_search_tool(
+            service_name: Annotated[
+                str,
+                Field(description="Name of the Cortex Search Service"),
+            ],
+            database_name: Annotated[
+                str,
+                Field(description="Target database containing the search service"),
+            ],
+            schema_name: Annotated[
+                str,
+                Field(description="Target schema containing the search service"),
+            ],
+            query: Annotated[
+                str,
+                Field(description="User query to search in search service"),
+            ],
+            columns: Annotated[
+                list[str],
+                Field(
+                    description="Optional list of columns to return for each relevant result in the response"
+                ),
+            ] = [],
+            filter_query: Annotated[
+                dict,
+                Field(description=cortex_search_filter_description),
+            ] = {},
+            limit: Annotated[
+                int,
+                Field(description="Optional limit on the number of results to return"),
+            ] = 10,
+        ):
+            return query_cortex_search(
                 snowflake_service=snowflake_service,
-                semantic_model=service_details.get("semantic_model"),
+                service_name=service_name,
+                database_name=database_name,
+                schema_name=schema_name,
                 query=query,
+                columns=columns,
+                filter_query=filter_query,
+                limit=limit,
             )
 
-    return cortex_analyst_wrapper
+
+def initialize_cortex_analyst_tool(server: FastMCP, snowflake_service):
+    if snowflake_service.analyst_services:
+
+        @server.tool(
+            name="cortex_analyst",
+            description=get_cortex_analyst_description(
+                snowflake_service.analyst_services
+            ),
+        )
+        def run_cortex_analyst_tool(
+            semantic_model: Annotated[
+                str,
+                Field(
+                    description="Fully qualified path to YAML semantic file or Snowflake Semantic View"
+                ),
+            ],
+            query: Annotated[
+                str,
+                Field(description="Natural language query to submit to Cortex Analyst"),
+            ],
+        ):
+            return query_cortex_analyst(
+                snowflake_service=snowflake_service,
+                semantic_model=semantic_model,
+                query=query,
+            )

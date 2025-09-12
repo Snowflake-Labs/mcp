@@ -38,27 +38,23 @@ The list contains SQL expression types. Those marked with True are permitted whi
 ```
 search_services: # List all Cortex Search services
   - service_name: "<service_name>"
-    description: > # Should start with "Search service that ..."
+    description: > # Describe contents of the search service"
       "<Search services that ...>"
     database_name: "<database_name>"
     schema_name: "<schema_name>"
-    columns: [] # Optional: List of columns to return for each relevant result (default: [])
-    limit: 10 # Optional: Limit on the number of results to return (default: 10)
   - service_name: "<service_name>"
-    description: > # Should start with "Search service that ..."
+    description: > # Describe contents of the search service"
       "<Search services that ...>"
     database_name: "<database_name>"
     schema_name: "<schema_name>"
-    columns: [] # Optional: List of columns to return for each relevant result (default: [])
-    limit: 10 # Optional: Limit on the number of results to return (default: 10)
 analyst_services: # List all Cortex Analyst semantic models/views
   - service_name: "<service_name>" # Create descriptive name for the service
     semantic_model: "<semantic_yaml_or_view>" # Fully-qualify semantic YAML model or Semantic View
-    description: > # Should start with "Analyst service that ..."
+    description: > # Describe contents of the analyst service"
       "<Analyst service that ...>"
   - service_name: "<service_name>" # Create descriptive name for the service
     semantic_model: "<semantic_yaml_or_view>" # Fully-qualify semantic YAML model or Semantic View
-    description: > # Should start with "Analyst service that ..."
+    description: > # Describe contents of the analyst service"
       "<Analyst service that ...>"
 other_services: # Set desired tool groups to True to enable tools for that group
   object_manager: True # Perform basic operations against Snowflake's most common objects such as creation, dropping, updating, and more.
@@ -80,7 +76,7 @@ sql_statement_permissions: # List SQL statements to explicitly allow (True) or d
   - Select: True
   - Transaction: True
   - TruncateTable: True
-  # - Unknown: True # To allow unknown or unmapped statement types, uncomment and set Unknown: True.
+  - Unknown: False # To allow unknown or unmapped statement types, set Unknown: True.
   - Update: True
   - Use: True
 ```
@@ -203,7 +199,6 @@ For prerequisites, environment setup, step-by-step guide and instructions, pleas
 Instances of Cortex Search (in `search_services` section) and Cortex Analyst (in `analyst_services` section) of the configuration file will be served as tools. Leave these sections blank to omit such tools.
 
 Ensure all services have accurate databases and schema names. Ideal descriptions are both highly descriptive and mutually exclusive.
-Columns and limits are optional for search services.
 
 The `semantic_model` value in analyst services should be a fully-qualified semantic view OR semantic YAML file in a Snowflake stage:
 - For a semantic view: `MY_DATABASE.MY_SCHEMA.MY_SEMANTIC_VIEW`

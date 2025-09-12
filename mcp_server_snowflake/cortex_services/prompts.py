@@ -9,8 +9,35 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+def get_cortex_search_description(search_services: list[dict]) -> str:
+    return f"""Search tool that performs semantic search against a configured Cortex Search service using Snowflake's REST API.
+    Supports filtering, column selection, and limit for refined search results.
+
+    Each service service can be identified by its database_name, schema_name, and service_name.
+    Columns and filters are optional.
+    The  user's query string is passed to the search service as the query parameter.
+
+    Available search services include:
+    {search_services}
+    """
+
+
+def get_cortex_analyst_description(analyst_services: list[dict]) -> str:
+    return f"""Analyst tool that performs natural language to SQL conversion against a configured Cortex Analyst service using Snowflake's REST API.
+    Supports semantic model or semantic view.
+
+    Each service service can be identified by its semantic_model.
+    The value of the semantic_model should be a fully-qualified path to a YAML semantic file or Snowflake Semantic View.
+    For example, "@my_db.my_schema.my_stage/my_semantic_file.yaml" or "MY_DB.MY_SCH.MY_SEMANTIC_VIEW".
+    The user's query string is passed to the analyst service as the query parameter.
+
+    Available analyst services include:
+    {analyst_services}
+    """
+
+
 cortex_search_filter_description = """Optional filter query dictionary.
-Cortex Search supports filtering on the ATTRIBUTES columns specified in the CREATE CORTEX SEARCH SERVICE command.
+Cortex Search supports filtering on the ATTRIBUTES columns.
 
 Cortex Search supports four matching operators:
 

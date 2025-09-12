@@ -20,11 +20,13 @@ from typing import Any, Dict, Generator, Literal, Optional, Tuple, cast
 
 import yaml
 from fastmcp import FastMCP
-from fastmcp.tools import Tool
 from snowflake.connector import DictCursor, connect
 from snowflake.core import Root
 
-import mcp_server_snowflake.cortex_services.tools as cortex_tools
+from mcp_server_snowflake.cortex_services.tools import (
+    initialize_cortex_analyst_tool,
+    initialize_cortex_search_tool,
+)
 from mcp_server_snowflake.environment import (
     get_spcs_container_token,
     is_running_in_spcs_container,
@@ -39,14 +41,13 @@ from mcp_server_snowflake.utils import (
     cleanup_snowflake_service,
     get_login_params,
     load_tools_config_resource,
-    sanitize_tool_name,
     unpack_sql_statement_permissions,
 )
 
 # Used to quantify Snowflake usage
 server_name = "mcp-server-snowflake"
 tag_major_version = 1
-tag_minor_version = 1
+tag_minor_version = 2
 query_tag = {"origin": "sf_sit", "name": "mcp_server"}
 
 logger = logging.getLogger(server_name)
@@ -547,38 +548,12 @@ def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
         if snowflake_service.semantic_manager:
             initialize_semantic_manager_tools(server, snowflake_service)
 
-        # Add tools for each configured search service
+        # Add tool for search service
         if snowflake_service.search_services:
-            for service in snowflake_service.search_services:
-                search_wrapper = cortex_tools.create_search_wrapper(
-                    snowflake_service=snowflake_service, service_details=service
-                )
-                server.add_tool(
-                    Tool.from_function(
-                        fn=search_wrapper,
-                        name=sanitize_tool_name(service.get("service_name")),
-                        description=service.get(
-                            "description",
-                            f"Search service: {service.get('service_name')}",
-                        ),
-                    )
-                )
+            initialize_cortex_search_tool(server, snowflake_service)
 
         if snowflake_service.analyst_services:
-            for service in snowflake_service.analyst_services:
-                cortex_analyst_wrapper = cortex_tools.create_cortex_analyst_wrapper(
-                    snowflake_service=snowflake_service, service_details=service
-                )
-                server.add_tool(
-                    Tool.from_function(
-                        fn=cortex_analyst_wrapper,
-                        name=sanitize_tool_name(service.get("service_name")),
-                        description=service.get(
-                            "description",
-                            f"Analyst service: {service.get('service_name')}",
-                        ),
-                    )
-                )
+            initialize_cortex_analyst_tool(server, snowflake_service)
 
 
 def main():
