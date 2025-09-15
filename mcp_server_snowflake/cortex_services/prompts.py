@@ -9,6 +9,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+def get_cortex_agent_description(agent_services: list[dict]) -> str:
+    return f"""Cortex Agent tool that combines structured and unstructured data querying and may include additional custom tools in a configured Cortex Agent object in Snowflake.
+
+    Each service service can be identified by its database_name, schema_name, and service_name.
+    The user's query string is passed to the agent service as the query parameter.
+
+    Available agent services include:
+    {agent_services}
+    """
+
+
 def get_cortex_search_description(search_services: list[dict]) -> str:
     return f"""Search tool that performs semantic search against a configured Cortex Search service using Snowflake's REST API.
     Supports filtering, column selection, and limit for refined search results.

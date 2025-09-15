@@ -1,3 +1,14 @@
+agent_services: # List all Cortex Agent services
+  - service_name: "<service_name>"
+    description: > # Describe contents of the agent service"
+      "<Agent service that ...>"
+    database_name: "<database_name>"
+    schema_name: "<schema_name>"
+  - service_name: "<service_name>"
+    description: > # Describe contents of the agent service"
+      "<Agent service that ...>"
+    database_name: "<database_name>"
+    schema_name: "<schema_name>"
 search_services: # List all Cortex Search services
   - service_name: "<service_name>"
     description: > # Describe contents of the search service"

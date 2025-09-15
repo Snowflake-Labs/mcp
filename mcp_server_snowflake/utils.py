@@ -87,6 +87,22 @@ class AnalystResponse(BaseModel):
     results: Optional[Union[dict, list]] = None
 
 
+class AgentResponse(BaseModel):
+    """
+    Response model for Cortex Agent API results.
+
+    Represents the structured response from Cortex Agent containing
+    natural language text, generated SQL, and query execution results.
+
+    Attributes
+    ----------
+    results : str | dict | list
+        Agent results in various formats depending on query and configuration
+    """
+
+    results: Union[str, dict, list]
+
+
 class SearchResponse(BaseModel):
     """
     Response model for Cortex Search API results.
@@ -233,6 +249,61 @@ class SnowflakeResponse:
         ret = SearchResponse(results=content.get("results", []))
         return ret.model_dump_json()
 
+    def parse_agent_response(self, response_stream: requests.Response) -> str:
+        """
+        Parse Cortex Agent streaming API response to extract final text response.
+
+        Processes the streaming response to find the final 'response' event and
+        extracts the text content. Returns a formatted AgentResponse model
+        for consistency with other Cortex API parsers.
+
+        Parameters
+        ----------
+        response_stream : requests.Response
+            The streaming response object from a Cortex Agent API call
+
+        Returns
+        -------
+        str
+            JSON string containing formatted agent response with extracted text
+        """
+
+        # Parse Server-Sent Events (SSE) from Cortex Agent streaming response
+        is_final_response = False
+
+        # Iterate over the response stream line by line
+        for line in response_stream.iter_lines(decode_unicode=True):
+            line = line.strip()
+
+            # Look for the 'event: response' marker
+            if line == "event: response":
+                is_final_response = True
+            elif is_final_response and line.startswith("data: "):
+                # If the next line is 'data:', it contains the JSON payload we need
+                json_data = line[len("data: ") :]
+                try:
+                    final_text = (
+                        json.loads(json_data)
+                        .get("content", [{}])[-1]
+                        .get("text", "No final response found.")
+                    )
+                    # Return formatted AgentResponse for consistency with other parsers
+                    response = AgentResponse(results=final_text)
+                    return response.model_dump_json()
+                except (json.JSONDecodeError, IndexError, KeyError):
+                    response = AgentResponse(
+                        results="Error parsing agent response data."
+                    )
+                    return response.model_dump_json()
+
+            # If any other event type or line is encountered, reset the flag
+            elif line:
+                is_final_response = False
+
+        # Return formatted error response if no final response found
+        response = AgentResponse(results="No final response found.")
+        return response.model_dump_json()
+
     def snowflake_response(
         self,
         api: str,
@@ -278,6 +349,8 @@ class SnowflakeResponse:
                         )
                     case "search":
                         parsed = self.parse_search_response(response=raw_sse)
+                    case "agent":
+                        parsed = self.parse_agent_response(response_stream=raw_sse)
                 return parsed
 
             return response_parsers

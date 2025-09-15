@@ -17,6 +17,7 @@ from pydantic import Field
 
 from mcp_server_snowflake.cortex_services.prompts import (
     cortex_search_filter_description,
+    get_cortex_agent_description,
     get_cortex_analyst_description,
     get_cortex_search_description,
 )
@@ -24,6 +25,70 @@ from mcp_server_snowflake.environment import construct_snowflake_post
 from mcp_server_snowflake.utils import SnowflakeException, SnowflakeResponse
 
 sfse = SnowflakeResponse()
+
+
+@sfse.snowflake_response(api="agent")
+async def query_cortex_agent(
+    snowflake_service,
+    service_name: str,
+    database_name: str,
+    schema_name: str,
+    query: str,
+) -> dict:
+    """
+    Query a Cortex Agent Service using the REST API.
+
+    Sends query to a configured Cortex Agent service using
+    Snowflake's REST API. Tool choice is auto based on pre-configured Agent object.
+
+    Parameters
+    ----------
+    snowflake_service
+    service_name : str
+        Name of the Cortex Agent Service
+    database_name : str
+        Target database containing the agent service
+    schema_name : str
+        Target schema containing the agent service
+    query : str
+        The user query string to submit to Cortex Agent
+
+    Returns
+    -------
+    dict
+        JSON response from the Cortex Agent API
+
+    Raises
+    ------
+    SnowflakeException
+        If the API request fails or returns an error status code
+
+    References
+    ----------
+    Snowflake Cortex Agent REST API (for Agent Objects):
+    https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-rest-api
+    """
+    host, headers = construct_snowflake_post(
+        service=snowflake_service,
+        api_path=f"/api/v2/databases/{database_name}/schemas/{schema_name}/agents/{service_name}:run",
+    )
+
+    payload = {
+        "messages": [{"role": "user", "content": [{"type": "text", "text": query}]}],
+        "tool_choice": {"type": "auto"},
+        "stream": False,  # Ignored by Agent API
+    }
+
+    response = requests.post(host, headers=headers, json=payload, stream=True)
+    try:
+        response.raise_for_status()
+        return response
+    except Exception:
+        raise SnowflakeException(
+            tool="Cortex Agent",
+            status_code=response.status_code,
+            message=response.text,
+        )
 
 
 @sfse.snowflake_response(api="search")
@@ -185,6 +250,40 @@ async def query_cortex_analyst(
             status_code=response.status_code,
             message=response.text,
         )
+
+
+def initialize_cortex_agent_tool(server: FastMCP, snowflake_service):
+    if snowflake_service.agent_services:
+
+        @server.tool(
+            name="cortex_agent",
+            description=get_cortex_agent_description(snowflake_service.agent_services),
+        )
+        def run_cortex_agent_tool(
+            service_name: Annotated[
+                str,
+                Field(description="Name of the Cortex Agent Service"),
+            ],
+            database_name: Annotated[
+                str,
+                Field(description="Target database containing the agent service"),
+            ],
+            schema_name: Annotated[
+                str,
+                Field(description="Target schema containing the agent service"),
+            ],
+            query: Annotated[
+                str,
+                Field(description="User query to submit to Cortex Agent"),
+            ],
+        ):
+            return query_cortex_agent(
+                snowflake_service=snowflake_service,
+                service_name=service_name,
+                database_name=database_name,
+                schema_name=schema_name,
+                query=query,
+            )
 
 
 def initialize_cortex_search_tool(server: FastMCP, snowflake_service):

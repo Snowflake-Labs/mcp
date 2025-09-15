@@ -9,7 +9,7 @@ This Snowflake MCP server provides tooling for Snowflake Cortex AI, object manag
 The MCP server currently supports the below capabilities:
 - **[Cortex Search](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search/cortex-search-overview)**: Query unstructured data in Snowflake as commonly used in Retrieval Augmented Generation (RAG) applications.
 - **[Cortex Analyst](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst)**: Query structured data in Snowflake via rich semantic modeling.
-- **[Cortex Agent](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents)**: (**Coming Soon**) Agentic orchestrator across structured and unstructured data retrieval
+- **[Cortex Agent](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents)**: Agentic orchestrator across structured and unstructured data retrieval
 - **Object Management**: Perform basic operations against Snowflake's most common objects such as creation, dropping, updating, and more.
 - **SQL Execution**: Run LLM-generated SQL managed by user-configured permissions.
 - **[Semantic View Querying](https://docs.snowflake.com/en/user-guide/views-semantic/overview)**: Discover and query Snowflake Semantic Views
@@ -22,7 +22,7 @@ A simple configuration file is used to drive all tooling. An example can be seen
 
 **Cortex Services**
 
-Many Cortex Search and Cortex Analyst services can be added. Ideal descriptions are both highly descriptive and mutually exclusive.
+Many Cortex Agent, Search, and Analyst services can be added. Ideal descriptions are both highly descriptive and mutually exclusive.
 Only the explicitly listed Cortex services will be available as tools in the MCP client.
 
 **Other Services**
@@ -36,6 +36,17 @@ The `sql_statement_permissions` section ensures that only approved statements ar
 The list contains SQL expression types. Those marked with True are permitted while those marked with False are not permitted. Please see [SQL Execution](#sql-execution) for examples of each expression type.
 
 ```
+agent_services: # List all Cortex Agent services
+  - service_name: "<service_name>"
+    description: > # Describe contents of the agent service"
+      "<Agent service that ...>"
+    database_name: "<database_name>"
+    schema_name: "<schema_name>"
+  - service_name: "<service_name>"
+    description: > # Describe contents of the agent service"
+      "<Agent service that ...>"
+    database_name: "<database_name>"
+    schema_name: "<schema_name>"
 search_services: # List all Cortex Search services
   - service_name: "<service_name>"
     description: > # Describe contents of the search service"
@@ -199,9 +210,11 @@ For prerequisites, environment setup, step-by-step guide and instructions, pleas
 
 # Cortex Services
 
-Instances of Cortex Search (in `search_services` section) and Cortex Analyst (in `analyst_services` section) of the configuration file will be served as tools. Leave these sections blank to omit such tools.
+Instances of Cortex Agent (in `agent_services` section), Cortex Search (in `search_services` section), and Cortex Analyst (in `analyst_services` section) of the configuration file will be served as tools. Leave these sections blank to omit such tools.
 
-Ensure all services have accurate databases and schema names. Ideal descriptions are both highly descriptive and mutually exclusive.
+Only Cortex Agent objects are supported in the MCP server. That is, only Cortex Agent objects pre-configured in Snowflake can be leveraged as tools. See [Cortex Agent Run API](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-run#streaming-responses) for more details.
+
+Ensure all services have accurate context names for service name, database, schema, etc. Ideal descriptions are both highly descriptive and mutually exclusive.
 
 The `semantic_model` value in analyst services should be a fully-qualified semantic view OR semantic YAML file in a Snowflake stage:
 - For a semantic view: `MY_DATABASE.MY_SCHEMA.MY_SEMANTIC_VIEW`
