@@ -81,6 +81,9 @@ sql_statement_permissions: # List SQL statements to explicitly allow (True) or d
   - Use: True
 ```
 
+> [!INFO]
+> Previous versions of the configuration file supported specifying explicit values for columns and limit for each Cortex Search service. Instead, these are now exclusively dynamic based on user prompt. If not specified, a search service's default search_columns will be returned with a limit of 10.
+
 ## Connecting to Snowflake
 
 The MCP server uses the [Snowflake Python Connector](https://docs.snowflake.com/en/developer-guide/python-connector/python-connector-connect) for all authentication and connection methods. **Please refer to the official Snowflake documentation for comprehensive authentication options and best practices.**
