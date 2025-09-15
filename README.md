@@ -81,7 +81,7 @@ sql_statement_permissions: # List SQL statements to explicitly allow (True) or d
   - Use: True
 ```
 
-> [!INFO]
+> [!NOTE]
 > Previous versions of the configuration file supported specifying explicit values for columns and limit for each Cortex Search service. Instead, these are now exclusively dynamic based on user prompt. If not specified, a search service's default search_columns will be returned with a limit of 10.
 
 ## Connecting to Snowflake
