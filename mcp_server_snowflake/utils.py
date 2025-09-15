@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import re
+import sys
 from functools import wraps
 from textwrap import dedent
 from typing import Awaitable, Callable, Optional, TypeVar, Union
@@ -26,6 +27,32 @@ logger = logging.getLogger(__name__)
 
 P = ParamSpec("P")
 R = TypeVar("R")
+
+
+def warn_deprecated_params() -> None:
+    """Warn about deprecated CLI arguments and environment variables."""
+    deprecated_found = []
+
+    if "--account-identifier" in sys.argv:
+        logger.warning(
+            "DEPRECATION WARNING: '--account-identifier' is deprecated. Use '--account' instead."
+        )
+        deprecated_found.append("--account-identifier")
+
+    if "--pat" in sys.argv:
+        logger.warning(
+            "DEPRECATION WARNING: '--pat' is deprecated. Use '--password' instead."
+        )
+        deprecated_found.append("--pat")
+
+    if os.environ.get("SNOWFLAKE_PAT") and not os.environ.get("SNOWFLAKE_PASSWORD"):
+        logger.warning(
+            "DEPRECATION WARNING: 'SNOWFLAKE_PAT' is deprecated. Use 'SNOWFLAKE_PASSWORD' instead."
+        )
+        deprecated_found.append("SNOWFLAKE_PAT")
+
+    if deprecated_found:
+        logger.info(f"Deprecated parameters: {', '.join(deprecated_found)}")
 
 
 def execute_query(statement: str, snowflake_service):

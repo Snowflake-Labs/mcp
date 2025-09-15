@@ -42,6 +42,7 @@ from mcp_server_snowflake.utils import (
     get_login_params,
     load_tools_config_resource,
     unpack_sql_statement_permissions,
+    warn_deprecated_params,
 )
 
 # Used to quantify Snowflake usage
@@ -558,6 +559,8 @@ def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
 
 def main():
     args = parse_arguments()
+
+    warn_deprecated_params()
 
     # Create server with lifespan that has access to args
     server = FastMCP("Snowflake MCP Server", lifespan=create_lifespan(args))
