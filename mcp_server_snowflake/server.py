@@ -79,7 +79,7 @@ class SnowflakeService:
     ----------
     service_config_file : str
         Path to configuration file
-    transport : Literal["stdio", "sse", "streamable-http"]
+    transport : Literal["stdio", "http", "sse", "streamable-http"]
         Transport for the MCP server
     search_services : list
         List of configured search service specifications
@@ -108,7 +108,9 @@ class SnowflakeService:
 
         self.service_config_file = str(Path(service_config_file).expanduser().resolve())
         self.config_path_uri = Path(self.service_config_file).as_uri()
-        self.transport = cast(Literal["stdio", "sse", "streamable-http"], transport)
+        self.transport = cast(
+            Literal["stdio", "http", "sse", "streamable-http"], transport
+        )
         self.connection_params = connection_params
         self.search_services = []
         self.analyst_services = []
@@ -465,7 +467,7 @@ def parse_arguments():
     parser.add_argument(
         "--transport",
         required=False,
-        choices=["stdio", "sse", "streamable-http"],
+        choices=["stdio", "http", "sse", "streamable-http"],
         help="Transport for the MCP server",
         default="stdio",
     )
@@ -566,6 +568,7 @@ def main():
         logger.info("Starting Snowflake MCP Server...")
 
         if args.transport and args.transport in [
+            "http",
             "sse",
             "streamable-http",
         ]:
