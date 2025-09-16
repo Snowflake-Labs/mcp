@@ -125,7 +125,7 @@ Connection parameters can be passed as CLI arguments and/or environment variable
 | Passcode | --passcode | SNOWFLAKE_PASSCODE | MFA passcode for authentication |
 | Private Key | --private-key | SNOWFLAKE_PRIVATE_KEY | Private key for key pair authentication |
 | Private Key File | --private-key-file | SNOWFLAKE_PRIVATE_KEY_FILE | Path to private key file |
-| Private Key Password | --private-key-pwd | SNOWFLAKE_PRIVATE_KEY_PWD | Password for encrypted private key |
+| Private Key Password | --private-key-file-pwd | SNOWFLAKE_PRIVATE_KEY_FILE_PWD | Password for encrypted private key |
 | Authenticator | --authenticator | - | Authentication type (default: snowflake) |
 | Connection Name | --connection-name | - | Name of connection from connections.toml (or config.toml) file |
 
