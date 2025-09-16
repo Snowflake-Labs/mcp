@@ -506,9 +506,9 @@ def get_login_params() -> dict:
             os.getenv("SNOWFLAKE_PRIVATE_KEY_FILE"),
             "Specifies the path to the private key file for the specified user.",
         ],
-        "private_key_pwd": [
-            "--private-key-pwd",
-            os.getenv("SNOWFLAKE_PRIVATE_KEY_PWD"),
+        "private_key_file_pwd": [
+            "--private-key-file-pwd",
+            os.getenv("SNOWFLAKE_PRIVATE_KEY_FILE_PWD"),
             "Specifies the passphrase to decrypt the private key file for the specified user.",
         ],
         "authenticator": [
