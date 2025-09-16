@@ -75,7 +75,7 @@ class SnowflakeService:
     connection_params : dict
         Connection parameters for Snowflake connector
     endpoint : str, default="/mcp"
-        Custom endpoint path for HTTP transports        
+        Custom endpoint path for HTTP transports
 
     Attributes
     ----------
@@ -84,7 +84,7 @@ class SnowflakeService:
     transport : Literal["stdio", "http", "sse", "streamable-http"]
         Transport for the MCP server
     endpoint : str
-        Custom endpoint path for HTTP transports              
+        Custom endpoint path for HTTP transports
     search_services : list
         List of configured search service specifications
     analyst_services : list
@@ -104,7 +104,7 @@ class SnowflakeService:
         service_config_file: str,
         transport: str,
         connection_params: dict,
-        endpoint: str = "/mcp"
+        endpoint: str = "/mcp",
     ):
         if service_config_file is None:
             raise ValueError(
@@ -507,7 +507,7 @@ def create_lifespan(args):
         service_config_file = get_var(
             "service_config_file", "SERVICE_CONFIG_FILE", args
         )
-        
+
         endpoint = os.environ.get("SNOWFLAKE_MCP_ENDPOINT", args.endpoint)
 
         snowflake_service = None
@@ -589,7 +589,9 @@ def main():
         ]:
             endpoint = os.environ.get("SNOWFLAKE_MCP_ENDPOINT", args.endpoint)
             logger.info(f"Starting server with transport: {args.transport}")
-            server.run(transport=args.transport, host="0.0.0.0", port=9000, path=endpoint)
+            server.run(
+                transport=args.transport, host="0.0.0.0", port=9000, path=endpoint
+            )
         else:
             logger.info(f"Starting server with transport: {args.transport or 'stdio'}")
             server.run(transport=args.transport or "stdio")
