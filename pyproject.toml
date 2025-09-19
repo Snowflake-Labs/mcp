@@ -19,6 +19,7 @@ dependencies = [
     "snowflake-core>=1.0.0",
     "sqlglot>=27.8.0",
 ]
+
 [project.urls]
 Repository = "https://github.com/Snowflake-Labs/mcp.git"
 Issues = "https://github.com/Snowflake-Labs/mcp/issues"
@@ -42,3 +43,4 @@ packages = ["mcp_server_snowflake"]
 
 [project.scripts]
 mcp-server-snowflake = "mcp_server_snowflake:main"
+snowflake-labs-mcp = "mcp_server_snowflake:main"
