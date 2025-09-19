@@ -34,5 +34,8 @@ dev = [
 requires = ["hatchling>=1.0.0"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcp_server_snowflake"]
+
 [project.scripts]
 mcp-server-snowflake = "mcp_server_snowflake:main"
