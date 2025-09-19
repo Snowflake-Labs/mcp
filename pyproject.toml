@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 authors = [
   {name = "Carlos Serrano"},
-  {name = "Jason Summer"},
+  {name = "Jason Summer", email = "jason.summer@snowflake.com" },
   {name = "Tyler White"},
 ]
 dependencies = [
