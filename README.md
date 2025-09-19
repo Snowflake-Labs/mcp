@@ -149,9 +149,7 @@ Set the path to the service configuration file and configure your connection met
     "mcp-server-snowflake": {
       "command": "uvx",
       "args": [
-        "--from",
-        "git+https://github.com/Snowflake-Labs/mcp",
-        "mcp-server-snowflake",
+        "snowflake-labs-mcp",
         "--service-config-file",
         "<path to file>/tools_config.yaml",
         "--connection-name",
@@ -169,9 +167,7 @@ Register the MCP server in cursor by opening Cursor and navigating to Settings -
     "mcp-server-snowflake": {
       "command": "uvx",
       "args": [
-        "--from",
-        "git+https://github.com/Snowflake-Labs/mcp",
-        "mcp-server-snowflake",
+        "snowflake-labs-mcp",
         "--service-config-file",
         "<path to file>/tools_config.yaml",
         "--connection-name",
@@ -197,7 +193,7 @@ mcp:
     servers:
         mcp-server-snowflake:
             command: "uvx"
-            args: ["--from", "git+https://github.com/Snowflake-Labs/mcp", "mcp-server-snowflake", "--service-config-file", "<path to file>/tools_config.yaml", "--connection-name", "default"]
+            args: ["snowflake-labs-mcp", "--service-config-file", "<path to file>/tools_config.yaml", "--connection-name", "default"]
 ```
 
 <img src="https://sfquickstarts.s3.us-west-1.amazonaws.com/misc/mcp/fast-agent.gif" width="800"/>
@@ -293,7 +289,7 @@ Lastly, you can **[query Semantic Views](https://docs.snowflake.com/en/user-guid
 
 The [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) is suggested for troubleshooting the MCP server. Run the below to launch the inspector.
 
-`npx @modelcontextprotocol/inspector uvx --from "git+https://github.com/Snowflake-Labs/mcp" mcp-server-snowflake --service-config-file "<path_to_file>/tools_config.yaml" --connection-name "default"`
+`npx @modelcontextprotocol/inspector uvx snowflake-labs-mcp --service-config-file "<path_to_file>/tools_config.yaml" --connection-name "default"`
 
 # FAQs
 
