@@ -1,5 +1,5 @@
 [project]
-name = "mcp-server-snowflake"
+name = "snowflake-labs-mcp"
 version = "1.3.0"
 description = "MCP server for Snowflake"
 readme = "README.md"
