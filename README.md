@@ -143,7 +143,7 @@ To integrate this server with Claude Desktop as the MCP Client, add the followin
 
 Set the path to the service configuration file and configure your connection method.
 
-```
+```json
 {
   "mcpServers": {
     "mcp-server-snowflake": {
@@ -161,7 +161,7 @@ Set the path to the service configuration file and configure your connection met
 ```
 ## [Cursor](https://www.cursor.com/)
 Register the MCP server in cursor by opening Cursor and navigating to Settings -> Cursor Settings ->  MCP. Add the below.
-```
+```json
 {
   "mcpServers": {
     "mcp-server-snowflake": {
@@ -203,6 +203,23 @@ mcp:
 For prerequisites, environment setup, step-by-step guide and instructions, please refer to this [blog](https://medium.com/snowflake/build-a-natural-language-data-assistant-in-vs-code-with-copilot-mcp-and-snowflake-cortex-ai-04a22a3b0f17).
 
 <img src="https://sfquickstarts.s3.us-west-1.amazonaws.com/misc/mcp/dash-dark-mcp-copilot.gif"/>
+
+
+## [Codex](https://github.com/openai/codex)
+Register the MCP server in codex by adding the following to `~/.codex/config.toml`
+```toml
+[mcp_servers.mcp-server-snowflake]
+command = "uvx"
+args = [
+    "mcp-server-snowflake",
+    "--service-config-file",
+    "<path to file>/tools_config.yaml",
+    "--connection-name",
+    "default"
+]
+```
+After editing, the snowflake mcp should appear in the output of `codex mcp list` run from the terminal.
+
 
 # Cortex Services
 
