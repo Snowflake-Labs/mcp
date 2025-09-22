@@ -11,7 +11,8 @@
 # limitations under the License.
 import argparse
 import json
-import logging
+
+# import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager, contextmanager
@@ -20,6 +21,7 @@ from typing import Any, Dict, Generator, Literal, Optional, Tuple, cast
 
 import yaml
 from fastmcp import FastMCP
+from fastmcp.utilities.logging import get_logger
 from snowflake.connector import DictCursor, connect
 from snowflake.core import Root
 
@@ -52,7 +54,7 @@ tag_major_version = 1
 tag_minor_version = 3
 query_tag = {"origin": "sf_sit", "name": "mcp_server"}
 
-logger = logging.getLogger(server_name)
+logger = get_logger(server_name)
 
 
 class SnowflakeService:
