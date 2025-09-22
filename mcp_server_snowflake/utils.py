@@ -10,7 +10,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import json
-import logging
 import os
 import re
 import sys
@@ -20,10 +19,11 @@ from typing import Awaitable, Callable, Optional, TypeVar, Union
 
 import requests
 import yaml
+from fastmcp.utilities.logging import get_logger
 from pydantic import BaseModel
 from typing_extensions import ParamSpec
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 P = ParamSpec("P")
 R = TypeVar("R")

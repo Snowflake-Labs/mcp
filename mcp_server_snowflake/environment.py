@@ -9,11 +9,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
 from pathlib import Path
 from urllib.parse import urljoin
 
-logger = logging.getLogger(__name__)
+from fastmcp.utilities.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def is_running_in_spcs_container() -> bool:
