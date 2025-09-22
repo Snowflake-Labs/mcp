@@ -132,16 +132,179 @@ Connection parameters can be passed as CLI arguments and/or environment variable
 > [!WARNING]
 > **Deprecation Notice**: The CLI arguments `--account-identifier` and `--pat`, as well as the environment variable `SNOWFLAKE_PAT`, are deprecated and will be removed in a future release. Please use `--account` and `--password` (or `SNOWFLAKE_ACCOUNT` and `SNOWFLAKE_PASSWORD`) instead.
 
+# Transport Configuration
+
+The MCP server supports multiple transport mechanisms. For detailed information about MCP transports, see the [FastMCP Transport Documentation](https://gofastmcp.com/clients/transports).
+
+| Transport | Description | Use Case |
+|-----------|-------------|----------|
+| `stdio` | Standard input/output (default) | Local development, MCP client integration |
+| `sse` (legacy) | Server-Sent Events | Streaming applications |
+| `streamable-http` | Streamable HTTP transport | Container deployments, remote servers |
+
+## Usage
+
+```bash
+# Default stdio transport
+uvx snowflake-labs-mcp --service-config-file config.yaml
+
+# HTTP transport with custom endpoint
+uvx snowflake-labs-mcp --service-config-file config.yaml --transport http --endpoint /my-endpoint
+
+# For containers (uses streamable-http on port 9000)
+uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http --endpoint /snowflake-mcp
+```
+
+**Environment Variables**: Set `SNOWFLAKE_MCP_ENDPOINT` to customize the endpoint path.
+
+# Container Deployment
+
+Deploy the MCP server using Docker or Docker Compose.
+
+## Docker
+
+```bash
+# Build and run
+docker build -f docker/server/Dockerfile -t mcp-server-snowflake .
+docker run -d \
+  --name mcp-server-snowflake \
+  -p 9000:9000 \
+  -e SNOWFLAKE_ACCOUNT=your_account \
+  -e SNOWFLAKE_USER=your_username \
+  -e SNOWFLAKE_PASSWORD=your_password \
+  -v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro \
+  mcp-server-snowflake
+```
+
+### Configuration File Volume Mount
+
+The `-v` flag mounts your local configuration file into the container:
+
+```bash
+-v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro
+```
+
+**Breaking this down:**
+- `${HOME}/.mcp/tools_config.yaml` - **Source**: Your local configuration file path
+- `/app/services/tools_config.yaml` - **Target**: Where the file appears inside the container
+- `:ro` - **Read-only**: Prevents the container from modifying your local configuration file
+
+**Important Notes:**
+- **Create the directory first**: `mkdir -p ${HOME}/.mcp/`
+- **Copy the template**: Copy `services/configuration.yaml` to `${HOME}/.mcp/tools_config.yaml` and customize it
+- **Without volume mount**: The container uses its built-in default configuration
+- **Read-only protection**: The `:ro` flag ensures your local config file cannot be accidentally modified by the container
+
+### Complete Setup Example
+
+Here's a complete setup from scratch:
+
+```bash
+# 1. Create configuration directory
+mkdir -p ${HOME}/.mcp/
+
+# 2. Copy and customize the configuration template
+cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml
+
+# 3. Edit your configuration file
+# nano ${HOME}/.mcp/tools_config.yaml
+# (Configure your Cortex services, permissions, etc.)
+
+# 4. Build and run the container
+docker build -f docker/server/Dockerfile -t mcp-server-snowflake .
+docker run -d \
+  --name mcp-server-snowflake \
+  -p 9000:9000 \
+  -e SNOWFLAKE_ACCOUNT=your_account \
+  -e SNOWFLAKE_USER=your_username \
+  -e SNOWFLAKE_PASSWORD=your_password \
+  -v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro \
+  mcp-server-snowflake
+
+# 5. Verify the container is running
+docker logs mcp-server-snowflake
+```
+
+### Authentication Options
+
+The container supports all Snowflake Python Connector authentication methods via environment variables:
+
+**Username/Password Authentication:**
+```bash
+-e SNOWFLAKE_ACCOUNT=your_account \
+-e SNOWFLAKE_USER=your_username \
+-e SNOWFLAKE_PASSWORD=your_password
+```
+
+**Key Pair Authentication:**
+```bash
+-e SNOWFLAKE_ACCOUNT=your_account \
+-e SNOWFLAKE_USER=your_username \
+-e SNOWFLAKE_PRIVATE_KEY="$(cat /path/to/private_key.p8)" \
+-e SNOWFLAKE_PRIVATE_KEY_FILE_PWD=your_key_password
+```
+
+**Programmatic Access Token (PAT):**
+```bash
+-e SNOWFLAKE_ACCOUNT=your_account \
+-e SNOWFLAKE_USER=your_username \
+-e SNOWFLAKE_PASSWORD=your_pat_token
+```
+
+**Additional Connection Parameters:**
+```bash
+-e SNOWFLAKE_ROLE=your_role \
+-e SNOWFLAKE_WAREHOUSE=your_warehouse \
+-e SNOWFLAKE_HOST=your_custom_host
+```
+
+For complete authentication details, see [Connecting to Snowflake](#connecting-to-snowflake).
+
+## Docker Compose
+
+```bash
+# Set environment variables and start
+export SNOWFLAKE_ACCOUNT=your_account
+export SNOWFLAKE_USER=your_username
+export SNOWFLAKE_PASSWORD=your_password
+docker-compose up -d
+```
+
+**Configuration Setup:**
+1. **Create configuration directory**: `mkdir -p ${HOME}/.mcp/`
+2. **Copy and customize**: `cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml`
+3. **Set environment variables** (or use `.env` file):
+
+```bash
+# .env file (optional - place in project root)
+SNOWFLAKE_ACCOUNT=your_account
+SNOWFLAKE_USER=your_username
+SNOWFLAKE_PASSWORD=your_password
+SNOWFLAKE_ROLE=your_role
+SNOWFLAKE_WAREHOUSE=your_warehouse
+```
+
+The `docker-compose.yml` automatically mounts your configuration as read-only to protect your local file from container modifications.
+
+The container runs with:
+- `streamable-http` transport on port 9000
+- Endpoint at `/snowflake-mcp`
+- Automatic SPCS environment detection
+- Configuration from `/app/services/tools_config.yaml` (default) or mounted file
+
 # Using with MCP Clients
 
 The MCP server is client-agnostic and will work with most MCP Clients that support basic functionality for MCP tools and (optionally) resources. Below are some examples.
 
 ## [Claude Desktop](https://support.anthropic.com/en/articles/10065433-installing-claude-for-desktop)
-To integrate this server with Claude Desktop as the MCP Client, add the following to your app's server configuration. By default, this is located at
+
+### Local Installation
+
+To integrate this server with Claude Desktop as the MCP Client, add the following to your app's server configuration. By default, this is located at:
 - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
 - Windows: %APPDATA%\Claude\claude_desktop_config.json
 
-Set the path to the service configuration file and configure your connection method.
+Set the path to the service configuration file and configure your connection method:
 
 ```json
 {
@@ -159,8 +322,28 @@ Set the path to the service configuration file and configure your connection met
   }
 }
 ```
+
+### Remote Container Connection
+
+To connect Claude Desktop to a containerized MCP server deployment:
+
+```json
+{
+  "mcpServers": {
+    "mcp-server-snowflake": {
+      "url": "http://localhost:9000/snowflake-mcp"
+    }
+  }
+}
+```
+
+For remote deployments, replace `localhost:9000` with your server's hostname and port.
+
 ## [Cursor](https://www.cursor.com/)
-Register the MCP server in cursor by opening Cursor and navigating to Settings -> Cursor Settings ->  MCP. Add the below.
+
+### Local Installation
+
+Register the MCP server in Cursor by opening Cursor and navigating to Settings -> Cursor Settings -> MCP. Add the below:
 ```json
 {
   "mcpServers": {
@@ -173,6 +356,20 @@ Register the MCP server in cursor by opening Cursor and navigating to Settings -
         "--connection-name",
         "default"
       ]
+    }
+  }
+}
+```
+
+### Remote Container Connection
+
+For containerized deployments:
+
+```json
+{
+  "mcpServers": {
+    "mcp-server-snowflake": {
+      "url": "http://localhost:9000/snowflake-mcp"
     }
   }
 }
@@ -186,14 +383,29 @@ For troubleshooting Cursor server issues, view the logs by opening the Output pa
 
 ## [fast-agent](https://fast-agent.ai/)
 
-Update the `fastagent.config.yaml` mcp server section with the configuration file path and connection name.
-```
+### Local Installation
+
+Update the `fastagent.config.yaml` mcp server section with the configuration file path and connection name:
+
+```yaml
 # MCP Servers
 mcp:
     servers:
         mcp-server-snowflake:
             command: "uvx"
             args: ["snowflake-labs-mcp", "--service-config-file", "<path to file>/tools_config.yaml", "--connection-name", "default"]
+```
+
+### Remote Container Connection
+
+For containerized deployments:
+
+```yaml
+# MCP Servers
+mcp:
+    servers:
+        mcp-server-snowflake:
+            url: "http://localhost:9000/snowflake-mcp"
 ```
 
 <img src="https://sfquickstarts.s3.us-west-1.amazonaws.com/misc/mcp/fast-agent.gif" width="800"/>
