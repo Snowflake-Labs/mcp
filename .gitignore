@@ -176,3 +176,7 @@ cython_debug/
 # fast-agent files
 fastagent.secrets.yaml
 *.jsonl
+
+# MCP Registry authentication tokens
+.mcpregistry_github_token
+.mcpregistry_registry_token
