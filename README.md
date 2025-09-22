@@ -211,7 +211,7 @@ Register the MCP server in codex by adding the following to `~/.codex/config.tom
 [mcp_servers.mcp-server-snowflake]
 command = "uvx"
 args = [
-    "mcp-server-snowflake",
+    "snowflake-labs-mcp",
     "--service-config-file",
     "<path to file>/tools_config.yaml",
     "--connection-name",
