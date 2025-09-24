@@ -349,3 +349,5 @@ Only listed Cortex services will be made into tools as well.
 # Bug Reports, Feedback, or Other Questions
 
 Please add issues to the GitHub repository.
+
+<!-- mcp-name: io.github.Snowflake-Labs/mcp -->
