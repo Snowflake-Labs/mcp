@@ -37,36 +37,36 @@ The list contains SQL expression types. Those marked with True are permitted whi
 
 ```
 agent_services: # List all Cortex Agent services
-  - service_name: "<service_name>"
-    description: > # Describe contents of the agent service"
-      "<Agent service that ...>"
-    database_name: "<database_name>"
-    schema_name: "<schema_name>"
-  - service_name: "<service_name>"
-    description: > # Describe contents of the agent service"
-      "<Agent service that ...>"
-    database_name: "<database_name>"
-    schema_name: "<schema_name>"
+  - service_name: <service_name>
+    description: > # Describe contents of the agent service
+      <Agent service that ...>
+    database_name: <database_name>
+    schema_name: <schema_name>
+  - service_name: <service_name>
+    description: > # Describe contents of the agent service
+      <Agent service that ...>
+    database_name: <database_name>
+    schema_name: <schema_name>
 search_services: # List all Cortex Search services
-  - service_name: "<service_name>"
-    description: > # Describe contents of the search service"
-      "<Search services that ...>"
-    database_name: "<database_name>"
-    schema_name: "<schema_name>"
-  - service_name: "<service_name>"
-    description: > # Describe contents of the search service"
-      "<Search services that ...>"
-    database_name: "<database_name>"
-    schema_name: "<schema_name>"
+  - service_name: <service_name>
+    description: > # Describe contents of the search service
+      <Search services that ...>
+    database_name: <database_name>
+    schema_name: <schema_name>
+  - service_name: <service_name>
+    description: > # Describe contents of the search service
+      <Search services that ...>
+    database_name: <database_name>
+    schema_name: <schema_name>
 analyst_services: # List all Cortex Analyst semantic models/views
-  - service_name: "<service_name>" # Create descriptive name for the service
-    semantic_model: "<semantic_yaml_or_view>" # Fully-qualify semantic YAML model or Semantic View
-    description: > # Describe contents of the analyst service"
-      "<Analyst service that ...>"
-  - service_name: "<service_name>" # Create descriptive name for the service
-    semantic_model: "<semantic_yaml_or_view>" # Fully-qualify semantic YAML model or Semantic View
-    description: > # Describe contents of the analyst service"
-      "<Analyst service that ...>"
+  - service_name: <service_name> # Create descriptive name for the service
+    semantic_model: <semantic_yaml_or_view> # Fully-qualify semantic YAML model or Semantic View
+    description: > # Describe contents of the analyst service
+      <Analyst service that ...>
+  - service_name: <service_name> # Create descriptive name for the service
+    semantic_model: <semantic_yaml_or_view> # Fully-qualify semantic YAML model or Semantic View
+    description: > # Describe contents of the analyst service
+      <Analyst service that ...>
 other_services: # Set desired tool groups to True to enable tools for that group
   object_manager: True # Perform basic operations against Snowflake's most common objects such as creation, dropping, updating, and more.
   query_manager: True # Run LLM-generated SQL managed by user-configured permissions.
@@ -157,55 +157,11 @@ uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-
 
 **Environment Variables**: Set `SNOWFLAKE_MCP_ENDPOINT` to customize the endpoint path.
 
-# Container Deployment
-
-Deploy the MCP server as a container for remote access or production environments.
-
-## Docker
-
-```bash
-# Setup configuration file
-mkdir -p ${HOME}/.mcp/
-cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml
-# Edit the configuration file as needed
-
-# Build and run the container
-docker build -f docker/server/Dockerfile -t mcp-server-snowflake .
-docker run -d \
-  --name mcp-server-snowflake \
-  -p 9000:9000 \
-  -e SNOWFLAKE_ACCOUNT=your_account \
-  -e SNOWFLAKE_USER=your_username \
-  -v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro \
-  mcp-server-snowflake
-```
-
-For key pair authentication, add:
-```bash
--e SNOWFLAKE_PRIVATE_KEY="$(cat /path/to/private_key.p8)" \
--e SNOWFLAKE_PRIVATE_KEY_FILE_PWD=your_key_password
-```
-
-## Docker Compose
-
-```bash
-# Setup configuration file
-mkdir -p ${HOME}/.mcp/
-cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml
-
-# Start with environment variables
-export SNOWFLAKE_ACCOUNT=your_account
-export SNOWFLAKE_USER=your_username
-docker-compose up -d
-```
-
 # Using with MCP Clients
 
-The MCP server is client-agnostic and will work with most MCP Clients that support basic functionality for MCP tools and (optionally) resources. Below are some examples.
+The MCP server is client-agnostic and will work with most MCP Clients that support basic functionality for MCP tools and (optionally) resources. Below are examples for local installation. For connecting to containerized deployments, see [Connecting MCP Clients to Containers](#connecting-mcp-clients-to-containers).
 
 ## [Claude Desktop](https://support.anthropic.com/en/articles/10065433-installing-claude-for-desktop)
-
-### Local Installation
 
 To integrate this server with Claude Desktop as the MCP Client, add the following to your app's server configuration. By default, this is located at:
 - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
@@ -221,7 +177,7 @@ Set the path to the service configuration file and configure your connection met
       "args": [
         "snowflake-labs-mcp",
         "--service-config-file",
-        "<path to file>/tools_config.yaml",
+        "<path_to_file>/tools_config.yaml",
         "--connection-name",
         "default"
       ]
@@ -230,25 +186,7 @@ Set the path to the service configuration file and configure your connection met
 }
 ```
 
-### Remote Container Connection
-
-To connect Claude Desktop to a containerized MCP server deployment:
-
-```json
-{
-  "mcpServers": {
-    "mcp-server-snowflake": {
-      "url": "http://localhost:9000/snowflake-mcp"
-    }
-  }
-}
-```
-
-For remote deployments, replace `localhost:9000` with your server's hostname and port.
-
 ## [Cursor](https://www.cursor.com/)
-
-### Local Installation
 
 Register the MCP server in Cursor by opening Cursor and navigating to Settings -> Cursor Settings -> MCP. Add the below:
 ```json
@@ -259,24 +197,10 @@ Register the MCP server in Cursor by opening Cursor and navigating to Settings -
       "args": [
         "snowflake-labs-mcp",
         "--service-config-file",
-        "<path to file>/tools_config.yaml",
+        "<path_to_file>/tools_config.yaml",
         "--connection-name",
         "default"
       ]
-    }
-  }
-}
-```
-
-### Remote Container Connection
-
-For containerized deployments:
-
-```json
-{
-  "mcpServers": {
-    "mcp-server-snowflake": {
-      "url": "http://localhost:9000/snowflake-mcp"
     }
   }
 }
@@ -290,8 +214,6 @@ For troubleshooting Cursor server issues, view the logs by opening the Output pa
 
 ## [fast-agent](https://fast-agent.ai/)
 
-### Local Installation
-
 Update the `fastagent.config.yaml` mcp server section with the configuration file path and connection name:
 
 ```yaml
@@ -300,19 +222,7 @@ mcp:
     servers:
         mcp-server-snowflake:
             command: "uvx"
-            args: ["snowflake-labs-mcp", "--service-config-file", "<path to file>/tools_config.yaml", "--connection-name", "default"]
-```
-
-### Remote Container Connection
-
-For containerized deployments:
-
-```yaml
-# MCP Servers
-mcp:
-    servers:
-        mcp-server-snowflake:
-            url: "http://localhost:9000/snowflake-mcp"
+            args: ["snowflake-labs-mcp", "--service-config-file", "<path_to_file>/tools_config.yaml", "--connection-name", "default"]
 ```
 
 <img src="https://sfquickstarts.s3.us-west-1.amazonaws.com/misc/mcp/fast-agent.gif" width="800"/>
@@ -332,13 +242,196 @@ command = "uvx"
 args = [
     "snowflake-labs-mcp",
     "--service-config-file",
-    "<path to file>/tools_config.yaml",
+    "<path_to_file>/tools_config.yaml",
     "--connection-name",
     "default"
 ]
 ```
 After editing, the snowflake mcp should appear in the output of `codex mcp list` run from the terminal.
 
+# Container Deployment
+
+Deploy the MCP server as a container for remote access or production environments. This guide provides step-by-step instructions for both Docker and Docker Compose deployments.
+
+## Docker Deployment
+
+Follow these steps to deploy the MCP server using Docker:
+
+### Step 1: Prepare Configuration File
+Create a directory for MCP configuration and copy the template:
+```bash
+mkdir -p ${HOME}/.mcp/
+cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml
+```
+
+### Step 2: Configure Services
+Edit the configuration file to match your environment:
+```bash
+# Edit the configuration file as needed
+# Update service names, database/schema references, and enable desired features
+nano ${HOME}/.mcp/tools_config.yaml
+```
+
+### Step 3: Build Container Image
+Build the Docker image from the provided Dockerfile:
+```bash
+docker build -f docker/server/Dockerfile -t mcp-server-snowflake .
+```
+
+### Step 4: Set Environment Variables
+Configure your Snowflake connection parameters. Choose one of the following authentication methods:
+
+**Username/Password Authentication:**
+```bash
+export SNOWFLAKE_ACCOUNT=<your_account>
+export SNOWFLAKE_USER=<your_username>
+export SNOWFLAKE_PASSWORD=<your_password>
+```
+
+**Key Pair Authentication:**
+```bash
+export SNOWFLAKE_ACCOUNT=<your_account>
+export SNOWFLAKE_USER=<your_username>
+export SNOWFLAKE_PRIVATE_KEY="$(cat <path_to_private_key.p8>)"
+export SNOWFLAKE_PRIVATE_KEY_FILE_PWD=<your_key_password>
+```
+
+### Step 5: Run Container
+Start the container with your configuration and environment variables:
+
+**For Username/Password Authentication:**
+```bash
+docker run -d \
+  --name mcp-server-snowflake \
+  -p 9000:9000 \
+  -e SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT} \
+  -e SNOWFLAKE_USER=${SNOWFLAKE_USER} \
+  -e SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD} \
+  -v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro \
+  mcp-server-snowflake
+```
+
+**For Key Pair Authentication:**
+```bash
+docker run -d \
+  --name mcp-server-snowflake \
+  -p 9000:9000 \
+  -e SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT} \
+  -e SNOWFLAKE_USER=${SNOWFLAKE_USER} \
+  -e SNOWFLAKE_PRIVATE_KEY="${SNOWFLAKE_PRIVATE_KEY}" \
+  -e SNOWFLAKE_PRIVATE_KEY_FILE_PWD=${SNOWFLAKE_PRIVATE_KEY_FILE_PWD} \
+  -v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro \
+  mcp-server-snowflake
+```
+
+### Step 6: Verify Deployment
+Check that the container is running and accessible:
+```bash
+# Check container status
+docker ps
+
+# Check container logs
+docker logs mcp-server-snowflake
+
+# Test endpoint (should return MCP server info)
+curl http://localhost:9000/snowflake-mcp
+```
+
+## Docker Compose Deployment
+
+Follow these steps for a simplified deployment using Docker Compose:
+
+### Step 1: Prepare Configuration File
+Create the configuration directory and copy the template:
+```bash
+mkdir -p ${HOME}/.mcp/
+cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml
+```
+
+### Step 2: Configure Services
+Edit the configuration file to match your environment:
+```bash
+# Update service configurations as needed
+nano ${HOME}/.mcp/tools_config.yaml
+```
+
+### Step 3: Set Environment Variables
+Configure your Snowflake connection parameters:
+```bash
+export SNOWFLAKE_ACCOUNT=<your_account>
+export SNOWFLAKE_USER=<your_username>
+# For username/password auth:
+export SNOWFLAKE_PASSWORD=<your_password>
+# For key pair auth, also set:
+# export SNOWFLAKE_PRIVATE_KEY="$(cat <path_to_private_key.p8>)"
+# export SNOWFLAKE_PRIVATE_KEY_FILE_PWD=<your_key_password>
+```
+
+### Step 4: Start Services
+Launch the container using Docker Compose:
+```bash
+docker-compose up -d
+```
+
+### Step 5: Verify Deployment
+Check that the services are running:
+```bash
+# Check service status
+docker-compose ps
+
+# View logs
+docker-compose logs
+
+# Test endpoint
+curl http://localhost:9000/snowflake-mcp
+```
+
+## Connecting MCP Clients to Containers
+
+Once your MCP server is running in a container, you can connect various MCP clients to it. The connection configuration is the same across all clients - only the configuration format differs.
+
+**Connection URL Format:**
+- Local deployment: `http://localhost:9000/snowflake-mcp`
+- Remote deployment: `http://<hostname>:<port>/snowflake-mcp`
+
+### Claude Desktop
+Add this to your `claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "mcp-server-snowflake": {
+      "url": "http://localhost:9000/snowflake-mcp"
+    }
+  }
+}
+```
+
+### Cursor
+Add this to your MCP settings in Cursor (Settings -> Cursor Settings -> MCP):
+```json
+{
+  "mcpServers": {
+    "mcp-server-snowflake": {
+      "url": "http://localhost:9000/snowflake-mcp"
+    }
+  }
+}
+```
+
+### fast-agent
+Add this to your `fastagent.config.yaml`:
+```yaml
+# MCP Servers
+mcp:
+    servers:
+        mcp-server-snowflake:
+            url: "http://localhost:9000/snowflake-mcp"
+```
+
+**Notes:**
+- For remote deployments, replace `localhost:9000` with your server's hostname and port
+- Ensure your firewall allows connections on port 9000 (or your configured port)
+- For production deployments, consider using HTTPS and proper authentication
 
 # Cortex Services
 
@@ -423,9 +516,55 @@ Lastly, you can **[query Semantic Views](https://docs.snowflake.com/en/user-guid
 
 ## Running MCP Inspector
 
-The [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) is suggested for troubleshooting the MCP server. Run the below to launch the inspector.
+The [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) is a powerful debugging tool that provides a web interface to interact with your MCP server directly. It's essential for troubleshooting configuration issues, testing tools, and validating your setup.
 
-`npx @modelcontextprotocol/inspector uvx snowflake-labs-mcp --service-config-file "<path_to_file>/tools_config.yaml" --connection-name "default"`
+### Basic Inspector Usage
+
+Launch the inspector with your MCP server configuration:
+
+```bash
+npx @modelcontextprotocol/inspector uvx snowflake-labs-mcp --service-config-file <path_to_file>/tools_config.yaml --connection-name "default"
+```
+
+### What the Inspector Shows You
+
+Once launched, the inspector will open a web interface where you can:
+
+1. **View Available Tools**: See all MCP tools loaded from your configuration file
+2. **Test Tool Execution**: Call tools directly with custom parameters to verify they work
+3. **Inspect Resources**: View any resources exposed by the server
+4. **Debug Connection Issues**: See detailed error messages if connection fails
+5. **Validate Configuration**: Ensure your service configurations are properly loaded
+
+### Common Troubleshooting Scenarios
+
+**Configuration File Issues:**
+- If tools don't appear, check your `tools_config.yaml` syntax
+- Verify that service names and database/schema references are correct
+- Ensure `other_services` are set to `True` for the tool groups you want
+
+**Connection Problems:**
+- Verify your Snowflake connection parameters are correct
+- Check that your role has the necessary permissions for the services you've configured
+- For key pair authentication, ensure your private key is properly formatted
+
+**Tool Execution Errors:**
+- Use the inspector to test individual tools with known-good parameters
+- Check the server logs for detailed error messages
+- Verify that the underlying Snowflake objects (databases, schemas, services) exist
+
+### Alternative Debugging Methods
+
+**Using Cursor MCP Logs:**
+- Open Output panel in Cursor
+- Select "Cursor MCP" from the dropdown
+- View real-time logs as you interact with the MCP server
+
+**Command Line Debugging:**
+Add verbose logging to see detailed connection and execution information:
+```bash
+uvx snowflake-labs-mcp --service-config-file <path_to_file>/tools_config.yaml --connection-name "default" --verbose
+```
 
 # FAQs
 
@@ -464,6 +603,29 @@ Only listed Cortex services will be made into tools as well.
 - If your account name contains underscores, try using the dashed version of the URL.
   - Account identifier with underscores: `acme-marketing_test_account`
   - Account identifier with dashes: `acme-marketing-test-account`
+
+#### How do I run the MCP server in a container for multiple users?
+
+- Deploy using Docker or Docker Compose as shown in the [Container Deployment](#container-deployment) section. The containerized server runs on HTTP and can handle multiple concurrent MCP client connections. Configure your environment variables for authentication and mount your configuration file as a read-only volume.
+
+#### Why aren't my Cortex services showing up as tools?
+
+- Verify that your configuration file syntax is correct (use MCP Inspector to validate)
+- Ensure the service names, database names, and schema names match exactly what exists in Snowflake
+- Check that your role has access to the specified databases and schemas
+- Confirm that the Cortex services actually exist in the specified locations
+
+#### Can I use different authentication methods for different environments?
+
+- Yes. You can set environment variables differently for each deployment, use different connection names in your connections.toml file, or pass different CLI arguments. The server supports all Snowflake Python Connector authentication methods including username/password, key pairs, OAuth, and SSO.
+
+#### How do I limit which SQL statements can be executed?
+
+- Use the `sql_statement_permissions` section in your configuration file. Set specific statement types to `True` (allow) or `False` (deny). For maximum security, only enable the statement types you actually need. Set `Unknown` to `False` to block unrecognized statement types.
+
+#### The MCP server is slow to start up. Is this normal?
+
+- Initial startup can take a few seconds as the server connects to Snowflake and validates your configuration. Subsequent tool calls should be much faster. If startup takes more than 30 seconds, check your network connection to Snowflake and verify your authentication credentials.
 
 # Bug Reports, Feedback, or Other Questions
 
