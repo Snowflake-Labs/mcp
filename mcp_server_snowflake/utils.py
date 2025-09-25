@@ -422,7 +422,7 @@ class SnowflakeException(Exception):
     Raising a Snowflake exception:
 
     >>> raise SnowflakeException(
-    ...     tool="Cortex Analyst", message="Model not found", status_code=400
+    ...     tool="Cortex Analyst", message="Service not found", status_code=400
     ... )
     """
 
@@ -447,7 +447,7 @@ class SnowflakeException(Exception):
         Notes
         -----
         Status code handling:
-        - 400: Bad request errors with model validation
+        - 400: Bad request errors
         - 401: Authorization/authentication errors
         - Other codes: Generic error with status code
         """
@@ -456,10 +456,7 @@ class SnowflakeException(Exception):
 
         else:
             if self.status_code == 400:
-                if "unknown model" in self.message:
-                    return f"{self.tool} Error: Selected model not available or invalid.\n\nError Message: {self.message} "
-                else:
-                    return f"{self.tool} Error: The resource cannot be found.\n\nError Message: {self.message} "
+                return f"{self.tool} Error: Bad request - please check your input parameters.\n\nError Message: {self.message} "
 
             elif self.status_code == 401:
                 return f"{self.tool} Error: An authorization error occurred.\n\nError Message: {self.message} "
