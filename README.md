@@ -159,138 +159,45 @@ uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-
 
 # Container Deployment
 
-Deploy the MCP server using Docker or Docker Compose.
+Deploy the MCP server as a container for remote access or production environments.
 
 ## Docker
 
 ```bash
-# Build and run
-docker build -f docker/server/Dockerfile -t mcp-server-snowflake .
-docker run -d \
-  --name mcp-server-snowflake \
-  -p 9000:9000 \
-  -e SNOWFLAKE_ACCOUNT=your_account \
-  -e SNOWFLAKE_USER=your_username \
-  -e SNOWFLAKE_PASSWORD=your_password \
-  -v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro \
-  mcp-server-snowflake
-```
-
-### Configuration File Volume Mount
-
-The `-v` flag mounts your local configuration file into the container:
-
-```bash
--v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro
-```
-
-**Breaking this down:**
-- `${HOME}/.mcp/tools_config.yaml` - **Source**: Your local configuration file path
-- `/app/services/tools_config.yaml` - **Target**: Where the file appears inside the container
-- `:ro` - **Read-only**: Prevents the container from modifying your local configuration file
-
-**Important Notes:**
-- **Create the directory first**: `mkdir -p ${HOME}/.mcp/`
-- **Copy the template**: Copy `services/configuration.yaml` to `${HOME}/.mcp/tools_config.yaml` and customize it
-- **Without volume mount**: The container uses its built-in default configuration
-- **Read-only protection**: The `:ro` flag ensures your local config file cannot be accidentally modified by the container
-
-### Complete Setup Example
-
-Here's a complete setup from scratch:
-
-```bash
-# 1. Create configuration directory
+# Setup configuration file
 mkdir -p ${HOME}/.mcp/
-
-# 2. Copy and customize the configuration template
 cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml
+# Edit the configuration file as needed
 
-# 3. Edit your configuration file
-# nano ${HOME}/.mcp/tools_config.yaml
-# (Configure your Cortex services, permissions, etc.)
-
-# 4. Build and run the container
+# Build and run the container
 docker build -f docker/server/Dockerfile -t mcp-server-snowflake .
 docker run -d \
   --name mcp-server-snowflake \
   -p 9000:9000 \
   -e SNOWFLAKE_ACCOUNT=your_account \
   -e SNOWFLAKE_USER=your_username \
-  -e SNOWFLAKE_PASSWORD=your_password \
   -v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro \
   mcp-server-snowflake
-
-# 5. Verify the container is running
-docker logs mcp-server-snowflake
 ```
 
-### Authentication Options
-
-The container supports all Snowflake Python Connector authentication methods via environment variables:
-
-**Username/Password Authentication:**
+For key pair authentication, add:
 ```bash
--e SNOWFLAKE_ACCOUNT=your_account \
--e SNOWFLAKE_USER=your_username \
--e SNOWFLAKE_PASSWORD=your_password
-```
-
-**Key Pair Authentication:**
-```bash
--e SNOWFLAKE_ACCOUNT=your_account \
--e SNOWFLAKE_USER=your_username \
 -e SNOWFLAKE_PRIVATE_KEY="$(cat /path/to/private_key.p8)" \
 -e SNOWFLAKE_PRIVATE_KEY_FILE_PWD=your_key_password
 ```
 
-**Programmatic Access Token (PAT):**
-```bash
--e SNOWFLAKE_ACCOUNT=your_account \
--e SNOWFLAKE_USER=your_username \
--e SNOWFLAKE_PASSWORD=your_pat_token
-```
-
-**Additional Connection Parameters:**
-```bash
--e SNOWFLAKE_ROLE=your_role \
--e SNOWFLAKE_WAREHOUSE=your_warehouse \
--e SNOWFLAKE_HOST=your_custom_host
-```
-
-For complete authentication details, see [Connecting to Snowflake](#connecting-to-snowflake).
-
 ## Docker Compose
 
 ```bash
-# Set environment variables and start
+# Setup configuration file
+mkdir -p ${HOME}/.mcp/
+cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml
+
+# Start with environment variables
 export SNOWFLAKE_ACCOUNT=your_account
 export SNOWFLAKE_USER=your_username
-export SNOWFLAKE_PASSWORD=your_password
 docker-compose up -d
 ```
-
-**Configuration Setup:**
-1. **Create configuration directory**: `mkdir -p ${HOME}/.mcp/`
-2. **Copy and customize**: `cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml`
-3. **Set environment variables** (or use `.env` file):
-
-```bash
-# .env file (optional - place in project root)
-SNOWFLAKE_ACCOUNT=your_account
-SNOWFLAKE_USER=your_username
-SNOWFLAKE_PASSWORD=your_password
-SNOWFLAKE_ROLE=your_role
-SNOWFLAKE_WAREHOUSE=your_warehouse
-```
-
-The `docker-compose.yml` automatically mounts your configuration as read-only to protect your local file from container modifications.
-
-The container runs with:
-- `streamable-http` transport on port 9000
-- Endpoint at `/snowflake-mcp`
-- Automatic SPCS environment detection
-- Configuration from `/app/services/tools_config.yaml` (default) or mounted file
 
 # Using with MCP Clients
 

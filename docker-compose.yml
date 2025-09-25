@@ -16,7 +16,7 @@ services:
       dockerfile: docker/server/Dockerfile
       platforms:
         - linux/amd64
-    image: ${SNOWFLAKE_ACCOUNT}.registry.snowflakecomputing.com/cube_testing/public/awesome_images/mcp-server:latest
+    image: mcp-server-snowflake:latest
     container_name: mcp-server-snowflake
     environment:
       - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
