@@ -149,7 +149,7 @@ The MCP server supports multiple transport mechanisms. For detailed information 
 uvx snowflake-labs-mcp --service-config-file config.yaml
 
 # HTTP transport with custom endpoint
-uvx snowflake-labs-mcp --service-config-file config.yaml --transport http --endpoint /my-endpoint
+uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http --endpoint /my-endpoint
 
 # For containers (uses streamable-http on port 9000)
 uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http --endpoint /snowflake-mcp
