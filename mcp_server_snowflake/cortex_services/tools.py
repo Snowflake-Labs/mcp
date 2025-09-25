@@ -349,6 +349,12 @@ def initialize_cortex_analyst_tool(server: FastMCP, snowflake_service):
             ),
         )
         def run_cortex_analyst_tool(
+            # service_name isn't required for Cortex Analyst
+            # adding it so specific service selected can be identified in client
+            service_name: Annotated[
+                str,
+                Field(description="Name of the Cortex Analyst Service"),
+            ],
             semantic_model: Annotated[
                 str,
                 Field(

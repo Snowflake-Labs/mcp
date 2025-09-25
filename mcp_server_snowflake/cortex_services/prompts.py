@@ -37,7 +37,7 @@ def get_cortex_analyst_description(analyst_services: list[dict]) -> str:
     return f"""Analyst tool that performs natural language to SQL conversion against a configured Cortex Analyst service using Snowflake's REST API.
     Supports semantic model or semantic view.
 
-    Each service service can be identified by its semantic_model.
+    Each service service can be identified by its service_name and semantic_model.
     The value of the semantic_model should be a fully-qualified path to a YAML semantic file or Snowflake Semantic View.
     For example, "@my_db.my_schema.my_stage/my_semantic_file.yaml" or "MY_DB.MY_SCH.MY_SEMANTIC_VIEW".
     The user's query string is passed to the analyst service as the query parameter.
