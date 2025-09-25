@@ -134,7 +134,7 @@ Connection parameters can be passed as CLI arguments and/or environment variable
 
 # Transport Configuration
 
-The MCP server supports multiple transport mechanisms. For detailed information about MCP transports, see the [FastMCP Transport Documentation](https://gofastmcp.com/clients/transports).
+The MCP server supports multiple transport mechanisms. For detailed information about MCP transports, see [FastMCP Transport Protocols](https://gofastmcp.com/deployment/running-server#transport-protocols).
 
 | Transport | Description | Use Case |
 |-----------|-------------|----------|
