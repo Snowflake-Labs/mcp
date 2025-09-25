@@ -155,7 +155,9 @@ uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-
 uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http --endpoint /snowflake-mcp
 ```
 
-**Environment Variables**: Set `SNOWFLAKE_MCP_ENDPOINT` to customize the endpoint path.
+# Use environment variable for endpoint
+export SNOWFLAKE_MCP_ENDPOINT="/my-mcp"
+uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http
 
 # Using with MCP Clients
 
