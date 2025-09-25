@@ -526,8 +526,15 @@ async def load_tools_config_resource(file_path: str) -> str:
     yaml.YAMLError
         If the YAML file is malformed
     """
-    with open(file_path, "r") as file:
-        tools_config = yaml.safe_load(file)
+    try:
+        with open(file_path, "r") as file:
+            tools_config = yaml.safe_load(file)
+    except FileNotFoundError:
+        logger.error(f"Service configuration file not found: {file_path}")
+        raise FileNotFoundError(f"Service configuration file not found: {file_path}")
+    except yaml.YAMLError as e:
+        logger.error(f"Invalid YAML in configuration file {file_path}: {e}")
+        raise yaml.YAMLError(f"Invalid YAML in configuration file {file_path}: {e}")
 
     return json.dumps(tools_config)
 
