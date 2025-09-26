@@ -156,8 +156,11 @@ uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-
 ```
 
 # Use environment variable for endpoint
+
+```bash
 export SNOWFLAKE_MCP_ENDPOINT="/my-mcp"
 uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http
+```
 
 # Using with MCP Clients
 
