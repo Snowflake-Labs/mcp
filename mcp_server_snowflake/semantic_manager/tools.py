@@ -47,7 +47,7 @@ def list_semantic_views(
             item.pop("extension", None)
         return result
     except Exception as e:
-        raise SnowflakeException(tool="list_semantic_views", message=e)
+        raise SnowflakeException(tool="list_semantic_views", message=str(e))
 
 
 def describe_semantic_view(
@@ -70,7 +70,7 @@ def describe_semantic_view(
         result = [item for item in result if item.get("object_kind") != "EXTENSION"]
         return result
     except Exception as e:
-        raise SnowflakeException(tool="list_semantic_views", message=e)
+        raise SnowflakeException(tool="list_semantic_views", message=str(e))
 
 
 def show_semantic_expressions(
@@ -112,7 +112,7 @@ def show_semantic_expressions(
             return f"No {expression_type.lower()} found."
         return result
     except Exception as e:
-        raise SnowflakeException(tool="show_semantic_dimensions", message=e)
+        raise SnowflakeException(tool="show_semantic_dimensions", message=str(e))
 
 
 def get_semantic_view_ddl(
@@ -132,7 +132,7 @@ def get_semantic_view_ddl(
     try:
         return execute_query(statement, snowflake_service)[0].get("DDL")
     except Exception as e:
-        raise SnowflakeException(tool="get_semantic_view_ddl", message=e)
+        raise SnowflakeException(tool="get_semantic_view_ddl", message=str(e))
 
 
 def write_semantic_view_query(
@@ -204,7 +204,7 @@ def write_semantic_view_query(
     try:
         return statement
     except Exception as e:
-        raise SnowflakeException(tool="write_semantic_view_query", message=e)
+        raise SnowflakeException(tool="write_semantic_view_query", message=str(e))
 
 
 def query_semantic_view(
@@ -234,7 +234,7 @@ def query_semantic_view(
 
         return execute_query(statement, snowflake_service)
     except Exception as e:
-        raise SnowflakeException(tool="query_semantic_view", message=e)
+        raise SnowflakeException(tool="query_semantic_view", message=str(e))
 
 
 def validate_semantic_view_tool(

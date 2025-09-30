@@ -48,7 +48,7 @@ def create_object(
         core_path.create(core_object, mode=create_mode)
         return f"Created {get_class_name(core_object)} {core_object.name}."
     except Exception as e:
-        raise SnowflakeException(tool="create_object", message=e)
+        raise SnowflakeException(tool="create_object", message=str(e))
 
 
 def drop_object(snowflake_object: SnowflakeObject, root: Root, if_exists: bool = False):
@@ -58,7 +58,7 @@ def drop_object(snowflake_object: SnowflakeObject, root: Root, if_exists: bool =
         core_path[core_object.name].drop(if_exists=if_exists)
         return f"Dropped {get_class_name(core_object)} {core_object.name}."
     except Exception as e:
-        raise SnowflakeException(tool="drop_object", message=e)
+        raise SnowflakeException(tool="drop_object", message=str(e))
 
 
 def create_or_alter_object(snowflake_object: SnowflakeObject, root: Root):
@@ -79,7 +79,7 @@ def create_or_alter_object(snowflake_object: SnowflakeObject, root: Root):
         return f"Created or altered {get_class_name(core_object)} {core_object.name}."
 
     except Exception as e:
-        raise SnowflakeException(tool="create_or_alter_object", message=e)
+        raise SnowflakeException(tool="create_or_alter_object", message=str(e))
 
 
 def describe_object(snowflake_object: SnowflakeObject, root: Root):
@@ -88,7 +88,7 @@ def describe_object(snowflake_object: SnowflakeObject, root: Root):
     try:
         return core_path[core_object.name].fetch().to_dict()
     except Exception as e:
-        raise SnowflakeException(tool="describe_object", message=e)
+        raise SnowflakeException(tool="describe_object", message=str(e))
 
 
 def list_objects(
@@ -138,7 +138,7 @@ def list_objects(
         else:
             return f"No matching {object_name} found."
     except Exception as e:
-        raise SnowflakeException(tool="list_semantic_views", message=e)
+        raise SnowflakeException(tool="list_semantic_views", message=str(e))
 
 
 def parse_object(target_object: Any, obj_type: supported_objects):
