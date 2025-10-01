@@ -13,7 +13,6 @@
 name: Publish to MCP Registry
 
 on:
-  pull_request:
   release:
     types: [published]
   workflow_dispatch:  # Allow manual triggering
@@ -25,6 +24,7 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Prevent hanging jobs
     steps:
     - uses: actions/checkout@v4
 
