@@ -26,16 +26,22 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    # Only run if the PyPI workflow succeeded
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Only run if the PyPI workflow succeeded OR if manually triggered
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     steps:
     - uses: actions/checkout@v4
 
     - name: Set VERSION from release tag
       run: |
-        # Get the tag that corresponds to the commit that triggered the PyPI workflow
+        # Get the tag that corresponds to the commit
         git fetch --tags
-        TAG=$(git describe --tags --exact-match ${{ github.event.workflow_run.head_sha }})
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          # For manual triggers, use the current commit
+          TAG=$(git describe --tags --exact-match HEAD || git describe --tags --abbrev=0)
+        else
+          # For workflow_run triggers, use the commit from the triggering workflow
+          TAG=$(git describe --tags --exact-match ${{ github.event.workflow_run.head_sha }})
+        fi
         # Extract version from tag (remove 'v' prefix if present)
         VERSION=${TAG#v}
         echo "VERSION=$VERSION" >> $GITHUB_ENV
