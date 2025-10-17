@@ -34,12 +34,6 @@ SNOWFLAKE_PASSWORD : str
     Password or Programmatic Access Token (alternative to --password)
 SERVICE_CONFIG_FILE : str
     Path to service configuration file (alternative to --service-config-file)
-SNOWFLAKE_MCP_HOST : str
-    Host address to bind the server to (alternative to --host, default: 0.0.0.0)
-SNOWFLAKE_MCP_PORT : str
-    Port number for the server to listen on (alternative to --port, default: 9000)
-SNOWFLAKE_MCP_ENDPOINT : str
-    Custom endpoint path for HTTP transports (alternative to --endpoint, default: /mcp)
 """
 
 from mcp_server_snowflake.server import main
