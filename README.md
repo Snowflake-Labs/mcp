@@ -254,6 +254,42 @@ args = [
 ```
 After editing, the snowflake mcp should appear in the output of `codex mcp list` run from the terminal.
 
+# Railway.com Deployment
+
+**Deploy to Railway.com for easy, production-ready hosting with automatic HTTPS and scaling.**
+
+Railway.com provides a simple, managed platform for deploying the Snowflake MCP server with minimal configuration. Perfect for teams or individuals who want a hosted solution without managing infrastructure.
+
+## Quick Start (10 minutes)
+
+**New to Railway?** Get started quickly with our step-by-step guide:
+
+**[QUICK_START_RAILWAY.md](./QUICK_START_RAILWAY.md)** - Get your MCP server running in under 10 minutes with:
+1. One-click Railway deployment
+2. Essential environment variable setup
+3. MCP client connection instructions
+4. Quick troubleshooting tips
+
+## Complete Deployment Guide
+
+**For production deployments and advanced configuration, see:**
+
+**[RAILWAY_DEPLOYMENT.md](./RAILWAY_DEPLOYMENT.md)** - Comprehensive Railway deployment guide with:
+- Detailed deployment steps
+- Environment variable configuration
+- MCP client connection instructions (Claude Desktop, Cursor, etc.)
+- Security best practices
+- Troubleshooting guide
+- Cost estimation
+
+**Benefits of Railway Deployment:**
+- Automatic HTTPS with custom domains
+- No infrastructure management required
+- Automatic deployments on Git push
+- Built-in monitoring and logs
+- Free tier available for testing
+- Scales automatically with usage
+
 # Container Deployment
 
 Deploy the MCP server as a container for remote access or production environments. This guide provides step-by-step instructions for both Docker and Docker Compose deployments.

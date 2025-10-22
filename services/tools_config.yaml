@@ -1,0 +1,45 @@
+agent_services: [] # Add your Cortex Agent services here
+  # Example:
+  # - service_name: "customer_support_agent"
+  #   description: "Agent service that handles customer support inquiries"
+  #   database_name: "MY_DATABASE"
+  #   schema_name: "MY_SCHEMA"
+
+search_services: [] # Add your Cortex Search services here
+  # Example:
+  # - service_name: "product_search"
+  #   description: "Search service that finds products from the catalog"
+  #   database_name: "MY_DATABASE"
+  #   schema_name: "MY_SCHEMA"
+
+analyst_services: [] # Add your Cortex Analyst semantic models/views here
+  # Example:
+  # - service_name: "sales_analyst"
+  #   semantic_model: "MY_DATABASE.MY_SCHEMA.SALES_SEMANTIC_VIEW"
+  #   description: "Analyst service that queries sales data"
+
+other_services: # Enable tool groups as needed
+  object_manager: True # Perform basic operations against Snowflake objects
+  query_manager: True # Run LLM-generated SQL with user-configured permissions
+  semantic_manager: True # Discover and query Snowflake Semantic Views
+
+sql_statement_permissions: # Control which SQL statements are allowed
+  # To allow all statements, uncomment the line below:
+  # - All: True
+  - Alter: True
+  - Command: True
+  - Comment: True
+  - Commit: True
+  - Create: True
+  - Delete: True
+  - Describe: True
+  - Drop: True
+  - Insert: True
+  - Merge: True
+  - Rollback: True
+  - Select: True
+  - Transaction: True
+  - TruncateTable: True
+  - Unknown: False # Set to True to allow unknown/unmapped statement types
+  - Update: True
+  - Use: True
