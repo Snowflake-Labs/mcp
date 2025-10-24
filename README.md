@@ -155,8 +155,16 @@ uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-
 uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http --endpoint /snowflake-mcp
 ```
 
-# Use environment variable for endpoint
+## Transport Customizations
+The below server customizations are available when running with `sse` and `streamable-http` transports.
 
+| Server Parameter | CLI Arguments | Environment Variable | Default |
+|-----------|--------------|---------------------|------------------|
+| Host | --server-host | SNOWFLAKE_MCP_HOST | "0.0.0.0"
+| Port | --port | SNOWFLAKE_MCP_PORT | 9000
+| Endpoint | --endpoint | SNOWFLAKE_MCP_ENDPOINT | /mcp
+
+Example:
 ```bash
 export SNOWFLAKE_MCP_ENDPOINT="/my-mcp"
 uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http
