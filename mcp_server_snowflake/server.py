@@ -480,9 +480,23 @@ def parse_arguments():
         default="stdio",
     )
     parser.add_argument(
+        "--server-host",  # Avoid using simply host here as it conflicts with the host argument in the Snowflake Python Connector
+        required=False,
+        help="Host address to bind the server to (default: 0.0.0.0)",
+        default="0.0.0.0",
+    )
+    # These left as simply port and endpoint for backward compatibility with existing deployments
+    parser.add_argument(
+        "--port",
+        required=False,
+        type=int,
+        help="Port number for the server to listen on (default: 9000)",
+        default=9000,
+    )
+    parser.add_argument(
         "--endpoint",
         required=False,
-        help="Endpoint path for the MCP server (default: /snowflake-mcp)",
+        help="Endpoint path for the MCP server (default: /mcp)",
         default="/mcp",
     )
 
@@ -595,11 +609,11 @@ def main():
             "sse",
             "streamable-http",
         ]:
+            host = os.environ.get("SNOWFLAKE_MCP_HOST", args.server_host)
+            port = int(os.environ.get("SNOWFLAKE_MCP_PORT", str(args.port)))
             endpoint = os.environ.get("SNOWFLAKE_MCP_ENDPOINT", args.endpoint)
             logger.info(f"Starting server with transport: {args.transport}")
-            server.run(
-                transport=args.transport, host="0.0.0.0", port=9000, path=endpoint
-            )
+            server.run(transport=args.transport, host=host, port=port, path=endpoint)
         else:
             logger.info(f"Starting server with transport: {args.transport or 'stdio'}")
             server.run(transport=args.transport or "stdio")
