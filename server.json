@@ -1,7 +1,8 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-16/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "name": "io.github.Snowflake-Labs/mcp",
   "description": "MCP Server for Snowflake from Snowflake Labs",
+  "title": "OSS Snowflake MCP Server",
   "repository": {
     "url": "https://github.com/Snowflake-Labs/mcp",
     "source": "github"
@@ -42,7 +43,7 @@
           "description": "Password or programmatic access token",
           "isRequired": false,
           "format": "string",
-          "isSecret": false,
+          "isSecret": true,
           "name": "SNOWFLAKE_PASSWORD"
         },
         {
@@ -70,7 +71,7 @@
           "description": "Private key for key pair authentication",
           "isRequired": false,
           "format": "string",
-          "isSecret": false,
+          "isSecret": true,
           "name": "SNOWFLAKE_PRIVATE_KEY"
         },
         {
@@ -86,6 +87,27 @@
           "format": "string",
           "isSecret": false,
           "name": "SNOWFLAKE_PRIVATE_KEY_FILE_PWD"
+        },
+        {
+          "description": "Host address to bind the server to (default: 0.0.0.0)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "SNOWFLAKE_MCP_HOST"
+        },
+        {
+          "description": "Port number for the server to listen on (default: 9000)",
+          "isRequired": false,
+          "format": "integer",
+          "isSecret": false,
+          "name": "SNOWFLAKE_MCP_PORT"
+        },
+        {
+          "description": "Endpoint path for the MCP server (default: /mcp)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "SNOWFLAKE_MCP_ENDPOINT"
         }
       ],
       "packageArguments": [
@@ -180,6 +202,20 @@
           "description": "Transport for the MCP server",
           "default": "stdio",
           "choices": ["stdio", "http", "sse", "streamable-http"],
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--server-host",
+          "description": "Host address to bind the server to (default: 0.0.0.0)",
+          "default": "0.0.0.0",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--port",
+          "description": "Port number for the server to listen on (default: 9000)",
+          "default": 9000,
           "isRequired": false
         },
         {
