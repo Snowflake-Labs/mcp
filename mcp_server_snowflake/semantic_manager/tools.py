@@ -221,7 +221,12 @@ def write_semantic_view_query(
     if order_by:
         statement += f" ORDER BY {order_by}"
 
-    if limit:
+    if limit is not None:
+        if not 0 <= int(limit) <= 1000:
+            raise SnowflakeException(
+                tool="write_semantic_view_query",
+                message="Limit must be between 0 and 1,000",
+            )
         statement += f" LIMIT {int(limit)}"
 
     try:

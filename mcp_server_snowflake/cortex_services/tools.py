@@ -78,8 +78,16 @@ async def query_cortex_agent(
         "tool_choice": {"type": "auto"},
         "stream": False,  # Ignored by Agent API
     }
+    try:
+        response = requests.post(
+            host, headers=headers, json=payload, stream=True, timeout=120
+        )
+    except requests.exceptions.Timeout:
+        raise SnowflakeException(
+            tool="Cortex Agent",
+            message="Request timed out",
+        )
 
-    response = requests.post(host, headers=headers, json=payload, stream=True)
     try:
         response.raise_for_status()
         return response
@@ -150,6 +158,14 @@ async def query_cortex_search(
     if filter_query is None:
         filter_query = {}
 
+    if (
+        limit is not None and not 0 <= int(limit) <= 1000
+    ):  # Cortex Search limits to 1000 server-side
+        raise SnowflakeException(
+            tool="Cortex Search",
+            message="Limit must be between 0 and 1,000",
+        )
+
     payload = {
         "query": query,
         "filter": filter_query,
@@ -158,13 +174,18 @@ async def query_cortex_search(
 
     if isinstance(columns, list) and len(columns) > 0:
         payload["columns"] = columns
+    try:
+        response = requests.post(host, headers=headers, json=payload, timeout=60)
+    except requests.exceptions.Timeout:
+        raise SnowflakeException(
+            tool="Cortex Search",
+            message="Request timed out",
+        )
 
-    response = requests.post(host, headers=headers, json=payload)
-
-    if response.status_code == 200:
+    try:
+        response.raise_for_status()
         return response
-
-    else:
+    except Exception:
         raise SnowflakeException(
             tool="Cortex Search",
             status_code=response.status_code,
@@ -239,12 +260,18 @@ async def query_cortex_analyst(
         "stream": False,
     }
 
-    response = requests.post(host, headers=headers, json=payload)
+    try:
+        response = requests.post(host, headers=headers, json=payload, timeout=120)
+    except requests.exceptions.Timeout:
+        raise SnowflakeException(
+            tool="Cortex Analyst",
+            message="Request timed out",
+        )
 
-    if response.status_code == 200:
+    try:
+        response.raise_for_status()
         return response
-
-    else:
+    except Exception:
         raise SnowflakeException(
             tool="Cortex Analyst",
             status_code=response.status_code,
