@@ -215,7 +215,7 @@
           "type": "named",
           "name": "--port",
           "description": "Port number for the server to listen on (default: 9000)",
-          "default": 9000,
+          "default": "9000",
           "isRequired": false
         },
         {
