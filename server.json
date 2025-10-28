@@ -98,7 +98,7 @@
         {
           "description": "Port number for the server to listen on (default: 9000)",
           "isRequired": false,
-          "format": "integer",
+          "format": "number",
           "isSecret": false,
           "name": "SNOWFLAKE_MCP_PORT"
         },
