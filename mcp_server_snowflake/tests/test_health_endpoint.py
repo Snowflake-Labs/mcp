@@ -13,14 +13,16 @@
 """
 Test for the health endpoint of the MCP server.
 """
-import unittest
-import requests
-import subprocess
-import time
+
 import os
 import signal
+import subprocess
 import sys
+import time
+import unittest
 from pathlib import Path
+
+import requests
 
 
 class TestHealthEndpoint(unittest.TestCase):
@@ -30,8 +32,10 @@ class TestHealthEndpoint(unittest.TestCase):
     def setUpClass(cls):
         """Start the MCP server before running tests."""
         # Path to the configuration file
-        config_file = Path(__file__).parent.parent.parent / "services" / "configuration.yaml"
-        
+        config_file = (
+            Path(__file__).parent.parent.parent / "services" / "configuration.yaml"
+        )
+
         # Start the server with HTTP transport
         cls.server_process = subprocess.Popen(
             [
@@ -46,17 +50,17 @@ class TestHealthEndpoint(unittest.TestCase):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        
+
         # Wait for the server to start
         time.sleep(2)
-    
+
     @classmethod
     def tearDownClass(cls):
         """Stop the MCP server after running tests."""
         if cls.server_process:
             os.kill(cls.server_process.pid, signal.SIGTERM)
             cls.server_process.wait()
-    
+
     def test_health_endpoint(self):
         """Test that the health endpoint returns a 200 OK response."""
         response = requests.get("http://localhost:9000/health")
