@@ -1,0 +1,9 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "docker/server/Dockerfile"
+
+[deploy]
+startCommand = "mcp-server-snowflake --service-config-file /app/services/tools_config.yaml --transport streamable-http --endpoint /snowflake-mcp"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+numReplicas = 1

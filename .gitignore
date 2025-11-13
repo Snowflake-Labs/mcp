@@ -180,3 +180,20 @@ fastagent.secrets.yaml
 # MCP Registry authentication tokens
 .mcpregistry_github_token
 .mcpregistry_registry_token
+
+# Railway deployment files (only include templates)
+.railway/
+
+# Snowflake configuration and credentials
+*.p8
+*.pem
+*_key.txt
+connections.toml
+.snowflake/
+
+# Custom MCP configuration (may contain sensitive service info)
+services/tools_config_*.yaml
+services/production_*.yaml
+services/*_config.yaml
+!services/tools_config.yaml
+!services/configuration.yaml
