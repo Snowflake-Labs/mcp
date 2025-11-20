@@ -1,0 +1,34 @@
+# Minimal working configuration for MCP Snowflake Server
+# This allows the server to start without requiring actual Snowflake services
+
+# Empty service lists - no Cortex services configured
+agent_services: []
+search_services: []
+analyst_services: []
+
+# Enable basic tool groups
+other_services:
+  object_manager: true
+  query_manager: true
+  semantic_manager: true
+
+# SQL statement permissions - allow common operations
+sql_statement_permissions:
+  - Select: true
+  - Describe: true
+  - Show: true
+  - Use: true
+  - Create: true
+  - Drop: true
+  - Alter: true
+  - Insert: true
+  - Update: true
+  - Delete: true
+  - Merge: true
+  - TruncateTable: true
+  - Command: true
+  - Comment: true
+  - Commit: true
+  - Rollback: true
+  - Transaction: true
+  - Unknown: false
