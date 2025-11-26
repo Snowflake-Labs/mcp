@@ -1,3 +1,4 @@
+import re
 from typing import Annotated, Literal
 
 from fastmcp import FastMCP
@@ -135,6 +136,28 @@ def get_semantic_view_ddl(
         raise SnowflakeException(tool="get_semantic_view_ddl", message=e)
 
 
+def _unqualify_where_clause(
+    where_clause: str,
+) -> str:
+    """
+    Remove table qualifications from WHERE clause.
+
+    In Snowflake semantic views, WHERE clause uses unqualified column names
+    (e.g., 'column_name' not 'table.column_name').
+
+    This function removes any 'table.' prefixes from column references.
+    """
+    if not where_clause:
+        return where_clause
+
+    # Pattern to find table.column references and replace with just column
+    # Match table_name.column_name pattern and replace with just column_name
+    pattern = r'\w+\.(\w+)'
+    result = re.sub(pattern, r'\1', where_clause)
+
+    return result
+
+
 def write_semantic_view_query(
     view_name: str,
     database_name: str,
@@ -155,6 +178,9 @@ def write_semantic_view_query(
     - Must specify at least one of DIMENSIONS, METRICS, or FACTS
     - Cannot specify both FACTS and METRICS in the same query
     - When using FACTS + DIMENSIONS, all must be from the same logical table
+
+    Note: WHERE clause column references are automatically qualified with their
+    table names as required by Snowflake semantic views.
     """
 
     # Validation: Ensure at least one clause is specified
@@ -193,10 +219,14 @@ def write_semantic_view_query(
 
     # Add optional clauses
     if where_clause:
-        statement += f" WHERE {where_clause}"
+        # Remove table qualifications from WHERE clause (use unqualified names only)
+        unqualified_where = _unqualify_where_clause(where_clause)
+        statement += f" WHERE {unqualified_where}"
 
     if order_by:
-        statement += f" ORDER BY {order_by}"
+        # Also remove qualifications from ORDER BY clause for consistency
+        unqualified_order_by = _unqualify_where_clause(order_by)
+        statement += f" ORDER BY {unqualified_order_by}"
 
     if limit:
         statement += f" LIMIT {int(limit)}"
