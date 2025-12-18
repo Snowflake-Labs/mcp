@@ -606,8 +606,13 @@ def main():
     args = parse_arguments()
 
     # Configure logging level based on verbose flag or environment variable
-    if args.verbose or os.getenv("SNOWFLAKE_MCP_VERBOSE", "").lower() in ("true", "1", "yes"):
+    if args.verbose or os.getenv("SNOWFLAKE_MCP_VERBOSE", "").lower() in (
+        "true",
+        "1",
+        "yes",
+    ):
         import logging
+
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger("fastmcp").setLevel(logging.DEBUG)
         logging.getLogger(server_name).setLevel(logging.DEBUG)
