@@ -156,13 +156,14 @@ uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-
 ```
 
 ## Transport Customizations
-The below server customizations are available when running with `sse` and `streamable-http` transports.
+Server customizations available for `sse` and `streamable-http` transports:
 
-| Server Parameter | CLI Arguments | Environment Variable | Default |
+| Parameter | CLI Argument | Environment Variable | Default |
 |-----------|--------------|---------------------|------------------|
 | Host | --server-host | SNOWFLAKE_MCP_HOST | "0.0.0.0"
 | Port | --port | SNOWFLAKE_MCP_PORT | 9000
 | Endpoint | --endpoint | SNOWFLAKE_MCP_ENDPOINT | /mcp
+| Debug Logging | --verbose | SNOWFLAKE_MCP_VERBOSE | false
 
 Example:
 ```bash
@@ -574,7 +575,8 @@ Once launched, the inspector will open a web interface where you can:
 - View real-time logs as you interact with the MCP server
 
 **Command Line Debugging:**
-Add verbose logging to see detailed connection and execution information:
+
+Enable debug logging with `--verbose` or set `SNOWFLAKE_MCP_VERBOSE=true`:
 ```bash
 uvx snowflake-labs-mcp --service-config-file <path_to_file>/tools_config.yaml --connection-name "default" --verbose
 ```

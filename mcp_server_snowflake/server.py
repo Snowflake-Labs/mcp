@@ -501,6 +501,13 @@ def parse_arguments():
         help="Endpoint path for the MCP server (default: /mcp)",
         default="/mcp",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        required=False,
+        help="Enable verbose/debug logging",
+        default=False,
+    )
 
     return parser.parse_args()
 
@@ -597,6 +604,14 @@ def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
 
 def main():
     args = parse_arguments()
+
+    # Configure logging level based on verbose flag or environment variable
+    if args.verbose or os.getenv("SNOWFLAKE_MCP_VERBOSE", "").lower() in ("true", "1", "yes"):
+        import logging
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger("fastmcp").setLevel(logging.DEBUG)
+        logging.getLogger(server_name).setLevel(logging.DEBUG)
+        logger.debug("Verbose/debug logging enabled")
 
     warn_deprecated_params()
 
