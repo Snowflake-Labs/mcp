@@ -4,6 +4,7 @@ from fastmcp.server.middleware import Middleware, MiddlewareContext
 
 from mcp_server_snowflake.object_manager.tools import validate_object_tool
 from mcp_server_snowflake.query_manager.tools import validate_sql_type
+from mcp_server_snowflake.semantic_manager.tools import validate_semantic_view_tool
 
 
 class CheckQueryType(Middleware):
@@ -31,6 +32,11 @@ class CheckQueryType(Middleware):
             "drop"
         ):
             statement_type, valid = validate_object_tool(
+                tool_name, self.sql_allow_list, self.sql_disallow_list
+            )
+
+        elif "semantic" in tool_name.lower():
+            statement_type, valid = validate_semantic_view_tool(
                 tool_name, self.sql_allow_list, self.sql_disallow_list
             )
 

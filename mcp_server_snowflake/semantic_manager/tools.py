@@ -214,7 +214,6 @@ def write_semantic_view_query(
 
     statement += ")"  # Close out the semantic sub-select
 
-    # Add optional clauses
     if where_clause:
         statement += f" WHERE {where_clause}"
 
@@ -278,7 +277,7 @@ def validate_semantic_view_tool(
     # User has not added any permissions, so we default to disallowing all object actions
     if len(sql_allow_list) == 0 and len(sql_disallow_list) == 0:
         valid = False
-    if func_type in sql_allow_list:
+    elif func_type in sql_allow_list:
         valid = True
     elif func_type in sql_disallow_list:
         valid = False
