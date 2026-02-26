@@ -107,6 +107,7 @@ class SnowflakeService:
         transport: str,
         connection_params: dict,
         endpoint: str = "/mcp",
+        result_format: str = "json",
     ):
         if service_config_file is None:
             raise ValueError(
@@ -129,6 +130,7 @@ class SnowflakeService:
         self.query_manager = False
         self.semantic_manager = False
         self.default_session_parameters: Dict[str, Any] = {}
+        self.result_format = result_format
         self.query_tag = query_tag if query_tag is not None else None
         self.tag_major_version = (
             tag_major_version if tag_major_version is not None else None
@@ -508,6 +510,13 @@ def parse_arguments():
         help="Enable verbose/debug logging",
         default=False,
     )
+    parser.add_argument(
+        "--result-format",
+        required=False,
+        choices=["json", "csv"],
+        default=os.getenv("SNOWFLAKE_MCP_RESULT_FORMAT", "json"),
+        help="Format for query result sets: json (default) or csv",
+    )
 
     return parser.parse_args()
 
@@ -542,6 +551,7 @@ def create_lifespan(args):
                 transport=args.transport,
                 connection_params=connection_params,
                 endpoint=endpoint or args.endpoint,
+                result_format=args.result_format,
             )
 
             # Initialize tools and resources now that we have the service

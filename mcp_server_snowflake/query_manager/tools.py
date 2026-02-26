@@ -5,7 +5,7 @@ from fastmcp import FastMCP
 from pydantic import Field
 
 from mcp_server_snowflake.query_manager.prompts import query_tool_prompt
-from mcp_server_snowflake.utils import SnowflakeException
+from mcp_server_snowflake.utils import SnowflakeException, results_to_csv
 
 
 def run_query(statement: str, snowflake_service):
@@ -41,7 +41,8 @@ def run_query(statement: str, snowflake_service):
             cur,
         ):
             cur.execute(statement)
-            return cur.fetchall()
+            results = cur.fetchall()
+            return results_to_csv(results) if snowflake_service.result_format == "csv" and results else results
     except Exception as e:
         raise SnowflakeException(
             tool="query_manager",

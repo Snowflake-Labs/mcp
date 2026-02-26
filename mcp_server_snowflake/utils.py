@@ -9,6 +9,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import csv
+import io
 import json
 import os
 import re
@@ -55,6 +57,15 @@ def warn_deprecated_params() -> None:
         logger.info(f"Deprecated parameters: {', '.join(deprecated_found)}")
 
 
+def results_to_csv(data: list[dict]) -> str:
+    """Convert a non-empty list of row dicts to a CSV string with a header row."""
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=data[0].keys())
+    writer.writeheader()
+    writer.writerows(data)
+    return buf.getvalue()
+
+
 def execute_query(statement: str, snowflake_service, bindvars: list[str] = []):
     """Execute a Snowflake query and return the results using Python connector dictionary cursor."""
     with snowflake_service.get_connection(
@@ -65,7 +76,8 @@ def execute_query(statement: str, snowflake_service, bindvars: list[str] = []):
         cur,
     ):
         cur.execute(statement, bindvars)
-        return cur.fetchall()
+        results = cur.fetchall()
+        return results_to_csv(results) if snowflake_service.result_format == "csv" and results else results
 
 
 def sanitize_tool_name(service_name: str) -> str:
@@ -111,7 +123,7 @@ class AnalystResponse(BaseModel):
 
     text: str
     sql: Optional[str] = None
-    results: Optional[Union[dict, list]] = None
+    results: Optional[Union[dict, list, str]] = None
 
 
 class AgentResponse(BaseModel):
@@ -214,7 +226,8 @@ class SnowflakeResponse:
             cur,
         ):
             cur.execute(statement)
-            return cur.fetchall()
+            results = cur.fetchall()
+            return results_to_csv(results) if service.result_format == "csv" and results else results
 
     def parse_analyst_response(
         self, response: requests.Response | dict, service, **kwargs
