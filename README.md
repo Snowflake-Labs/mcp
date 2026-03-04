@@ -1,3 +1,20 @@
+# notion-snowflake-mcp
+
+Notion's fork of [`snowflake-labs-mcp`](https://github.com/Snowflake-Labs/mcp). Published to [Pyx](https://api.pyx.dev/simple/notion/main) as `notion-snowflake-mcp`.
+
+### Changes from upstream
+
+- **Lazy Snowflake connection** -- avoids SSO browser popup on server startup
+- **Snowflake SQL dialect for statement parsing** -- fixes JSON/CTE queries blocked as "unknown" statement type
+- **Query comment injection** -- automatic observability metadata on every query (replaces `ALTER SESSION SET QUERY_TAG`)
+- **`set_query_context` tool** -- lets agents set intent, domain, and dataset metadata at runtime
+
+See [CHANGELOG.md](CHANGELOG.md) for full details.
+
+---
+
+*The rest of this README is from the upstream project.*
+
 # Snowflake Cortex AI Model Context Protocol (MCP) Server
 
 <a href="https://emerging-solutions-toolbox.streamlit.app/">
