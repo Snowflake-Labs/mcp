@@ -76,7 +76,6 @@ async def query_cortex_agent(
     payload = {
         "messages": [{"role": "user", "content": [{"type": "text", "text": query}]}],
         "tool_choice": {"type": "auto"},
-        "stream": False,  # Ignored by Agent API
     }
     try:
         response = requests.post(

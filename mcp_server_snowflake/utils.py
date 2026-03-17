@@ -309,11 +309,11 @@ class SnowflakeResponse:
                 # If the next line is 'data:', it contains the JSON payload we need
                 json_data = line[len("data: ") :]
                 try:
-                    final_text = (
-                        json.loads(json_data)
-                        .get("content", [{}])[-1]
-                        .get("text", "No final response found.")
-                    )
+                    content = json.loads(json_data).get("content", [])
+                    final_text = "No final response found."
+                    for item in content:
+                        if item.get("type") == "text" and "text" in item:
+                            final_text = item["text"]
                     # Return formatted AgentResponse for consistency with other parsers
                     response = AgentResponse(results=final_text)
                     return response.model_dump_json()
