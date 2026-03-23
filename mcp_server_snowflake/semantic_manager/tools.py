@@ -1,3 +1,5 @@
+import json
+import re
 from typing import Annotated, Literal
 
 from fastmcp import FastMCP
@@ -5,6 +7,7 @@ from pydantic import Field
 
 from mcp_server_snowflake.semantic_manager.objects import SemanticExpression
 from mcp_server_snowflake.semantic_manager.prompts import (
+    get_semantic_view_context_prompt,
     query_semantic_view_prompt,
     write_semantic_view_query_prompt,
 )
@@ -265,6 +268,65 @@ def query_semantic_view(
         raise SnowflakeException(tool="query_semantic_view", message=str(e))
 
 
+def parse_semantic_view_context(ddl: str) -> dict:
+    """Parse AI context metadata tags from a semantic view's DDL."""
+    flags = re.IGNORECASE | re.DOTALL
+
+    def _unescape(s: str | None) -> str | None:
+        if s is None:
+            return None
+        return s.replace("''", "'").strip()
+
+    # View-level COMMENT: appears after closing paren of last section
+    comment_match = re.search(r"\)\s*\n\s*comment\s*=\s*'((?:[^']|'')*)'", ddl, flags)
+    comment = _unescape(comment_match.group(1)) if comment_match else None
+
+    # AI_SQL_GENERATION: keyword + space + single-quoted string (no equals sign)
+    ai_sql_match = re.search(r"ai_sql_generation\s+'((?:[^']|'')*)'", ddl, flags)
+    ai_sql_generation = _unescape(ai_sql_match.group(1)) if ai_sql_match else None
+
+    # AI_QUESTION_CATEGORIZATION: keyword + space + single-quoted string (no equals sign)
+    ai_cat_match = re.search(
+        r"ai_question_categorization\s+'((?:[^']|'')*)'", ddl, flags
+    )
+    ai_question_categorization = (
+        _unescape(ai_cat_match.group(1)) if ai_cat_match else None
+    )
+
+    # WITH EXTENSION: (CA='...')
+    ext_match = re.search(
+        r"with\s+extension\s*\(\s*CA\s*=\s*'((?:[^']|'')*)'\s*\)", ddl, flags
+    )
+    extension = None
+    if ext_match:
+        raw = _unescape(ext_match.group(1))
+        try:
+            extension = json.loads(raw)
+        except (json.JSONDecodeError, TypeError):
+            extension = {"raw": raw, "parse_error": True}
+
+    return {
+        "comment": comment,
+        "ai_sql_generation": ai_sql_generation,
+        "ai_question_categorization": ai_question_categorization,
+        "extension": extension,
+    }
+
+
+def get_semantic_view_context(
+    snowflake_service, view_name: str, database_name: str, schema_name: str
+):
+    ddl = get_semantic_view_ddl(
+        snowflake_service, view_name, database_name, schema_name
+    )
+    if not ddl:
+        raise SnowflakeException(
+            tool="get_semantic_view_context",
+            message="No DDL returned for the specified semantic view.",
+        )
+    return parse_semantic_view_context(ddl)
+
+
 def validate_semantic_view_tool(
     function_name: str,
     sql_allow_list: list[str],
@@ -459,6 +521,28 @@ def initialize_semantic_manager_tools(server: FastMCP, snowflake_service):
         ],
     ):
         return get_semantic_view_ddl(
+            snowflake_service, view_name, database_name, schema_name
+        )
+
+    @server.tool(
+        name="get_semantic_view_context",
+        description=get_semantic_view_context_prompt,
+    )
+    def get_semantic_view_context_tool(
+        database_name: Annotated[
+            str,
+            Field(description="The name of the database containing the semantic view."),
+        ],
+        schema_name: Annotated[
+            str,
+            Field(description="The name of the schema containing the semantic view."),
+        ],
+        view_name: Annotated[
+            str,
+            Field(description="The name of the semantic view to get context for."),
+        ],
+    ):
+        return get_semantic_view_context(
             snowflake_service, view_name, database_name, schema_name
         )
 
