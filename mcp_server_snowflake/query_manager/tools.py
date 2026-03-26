@@ -70,7 +70,7 @@ def get_statement_type(sql_string):
     """
     try:
         # Parse the SQL statement. The root of the AST is the statement type.
-        expression_tree = sqlglot.parse_one(sql_string)
+        expression_tree = sqlglot.parse_one(sql_string, dialect="snowflake")
 
         # The expression type is the class of the root node.
         statement_type = type(expression_tree).__name__
