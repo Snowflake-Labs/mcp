@@ -10,9 +10,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pytest
-
-from mcp_server_snowflake.query_manager.tools import get_statement_type, validate_sql_type
+from mcp_server_snowflake.query_manager.tools import (
+    get_statement_type,
+    validate_sql_type,
+)
 
 
 class TestGetStatementType:
@@ -38,10 +39,15 @@ class TestGetStatementType:
         assert get_statement_type("NOT VALID SQL !!!") == "Unknown"
 
     def test_try_parse_json_colon_path_with_cast(self):
-        assert get_statement_type("SELECT TRY_PARSE_JSON(col):name::string FROM t") == "Select"
+        assert (
+            get_statement_type("SELECT TRY_PARSE_JSON(col):name::string FROM t")
+            == "Select"
+        )
 
     def test_parse_json_colon_path_with_cast(self):
-        assert get_statement_type("SELECT PARSE_JSON(col):name::string FROM t") == "Select"
+        assert (
+            get_statement_type("SELECT PARSE_JSON(col):name::string FROM t") == "Select"
+        )
 
     def test_column_colon_path_with_cast(self):
         assert get_statement_type("SELECT v:city::string FROM t") == "Select"
