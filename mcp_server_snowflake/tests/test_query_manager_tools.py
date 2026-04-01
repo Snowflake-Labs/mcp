@@ -73,7 +73,7 @@ class TestValidateSqlType:
         assert valid is True
 
     def test_unknown_blocked_by_default(self):
-        """Unparseable SQL must be blocked when unknown is not in allow list."""
+        """Unparsable SQL must be blocked when unknown is not in allow list."""
         _, valid = validate_sql_type("NOT VALID SQL !!!", ["select"], [])
         assert valid is False
 
