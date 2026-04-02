@@ -10,6 +10,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import pytest
+
 from mcp_server_snowflake.query_manager.tools import (
     get_statement_type,
     validate_sql_type,
@@ -51,6 +53,33 @@ class TestGetStatementType:
 
     def test_column_colon_path_with_cast(self):
         assert get_statement_type("SELECT v:city::string FROM t") == "Select"
+
+
+class TestSnowflakeSpecificSyntax:
+    """Additional Snowflake dialect coverage: COPY INTO, LATERAL FLATTEN, etc."""
+
+    @pytest.mark.parametrize(
+        "sql",
+        [
+            "SELECT data:user.address.city::STRING FROM t",
+            "SELECT data['key'] FROM t",
+            "SELECT f.value:key::STRING FROM t, LATERAL FLATTEN(input => t.arr) f",
+            "SELECT f.value::STRING FROM t, LATERAL FLATTEN(input => t.arr) f",
+            "SELECT OBJECT_CONSTRUCT('key', 'value') AS obj",
+            "SELECT GET_PATH(data, 'a.b') FROM t",
+        ],
+    )
+    def test_snowflake_syntax_parses_as_select(self, sql):
+        assert get_statement_type(sql) == "Select"
+
+    def test_copy_into_parses_as_copy(self):
+        """COPY INTO should parse as Copy, not Unknown (see #161)."""
+        assert (
+            get_statement_type(
+                "COPY INTO @stage/file.csv FROM (SELECT * FROM t) FILE_FORMAT = (TYPE = CSV)"
+            )
+            == "Copy"
+        )
 
 
 class TestValidateSqlType:

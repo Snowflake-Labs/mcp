@@ -77,6 +77,7 @@ sql_statement_permissions: # List SQL statements to explicitly allow (True) or d
   - Command: True
   - Comment: True
   - Commit: True
+  - Copy: True # COPY INTO — requires dialect="snowflake" in sqlglot to parse correctly.
   - Create: True
   - Delete: True
   - Describe: True
