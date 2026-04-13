@@ -2080,7 +2080,7 @@ wheels = [
 
 [[package]]
 name = "snowflake-labs-mcp"
-version = "1.4.0"
+version = "1.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
