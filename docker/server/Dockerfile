@@ -29,4 +29,9 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 ENV PATH="/app/.venv/bin:$PATH"
 
-CMD ["mcp-server-snowflake", "--service-config-file", "/app/services/tools_config.yaml", "--transport", "streamable-http", "--endpoint", "/snowflake-mcp"]
+RUN adduser --disabled-password --gecos '' mcpuser \
+    && chown -R mcpuser:mcpuser /app
+
+USER mcpuser
+
+CMD ["mcp-server-snowflake", "--service-config-file", "/app/services/configuration.yaml"]

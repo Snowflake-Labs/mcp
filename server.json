@@ -33,6 +33,20 @@
           "name": "SNOWFLAKE_HOST"
         },
         {
+          "description": "Default database for the connection",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "SNOWFLAKE_DATABASE"
+        },
+        {
+          "description": "Default schema for the connection",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "SNOWFLAKE_SCHEMA"
+        },
+        {
           "description": "Username for authentication",
           "isRequired": false,
           "format": "string",
@@ -40,7 +54,7 @@
           "name": "SNOWFLAKE_USER"
         },
         {
-          "description": "Password or programmatic access token",
+          "description": "Password for Snowflake authentication",
           "isRequired": false,
           "format": "string",
           "isSecret": true,
@@ -89,6 +103,13 @@
           "name": "SNOWFLAKE_PRIVATE_KEY_FILE_PWD"
         },
         {
+          "description": "Authentication type such as snowflake or externalbrowser",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "SNOWFLAKE_AUTHENTICATOR"
+        },
+        {
           "description": "Host address to bind the server to (default: 0.0.0.0)",
           "isRequired": false,
           "format": "string",
@@ -108,6 +129,13 @@
           "format": "string",
           "isSecret": false,
           "name": "SNOWFLAKE_MCP_ENDPOINT"
+        },
+        {
+          "description": "Enable verbose/debug logging",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false,
+          "name": "SNOWFLAKE_MCP_VERBOSE"
         }
       ],
       "packageArguments": [
@@ -127,6 +155,18 @@
           "type": "named",
           "name": "--host",
           "description": "Snowflake host URL",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--database",
+          "description": "Default database for the connection",
+          "isRequired": false
+        },
+        {
+          "type": "named",
+          "name": "--schema",
+          "description": "Default schema for the connection",
           "isRequired": false
         },
         {

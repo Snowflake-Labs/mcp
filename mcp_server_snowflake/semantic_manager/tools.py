@@ -8,7 +8,11 @@ from mcp_server_snowflake.semantic_manager.prompts import (
     query_semantic_view_prompt,
     write_semantic_view_query_prompt,
 )
-from mcp_server_snowflake.utils import SnowflakeException, execute_query
+from mcp_server_snowflake.utils import (
+    SnowflakeException,
+    execute_query,
+    validate_starts_with_filter,
+)
 
 
 def list_semantic_views(
@@ -43,9 +47,10 @@ def list_semantic_views(
         )
 
     if starts_with:
-        # sanitizing string manually because bind variables are not supported here
-        sanitized_starts_with = starts_with.replace("'", "")
-        statement += f" STARTS WITH '{sanitized_starts_with}'"
+        safe_starts_with = validate_starts_with_filter(
+            starts_with, "list_semantic_views"
+        )
+        statement += f" STARTS WITH '{safe_starts_with}'"
 
     try:
         result = execute_query(statement, snowflake_service, bindvars)
@@ -111,9 +116,10 @@ def show_semantic_expressions(
         statement += " IN ACCOUNT"
 
     if starts_with:
-        # sanitizing string manually because bind variables are not supported here
-        sanitized_starts_with = starts_with.replace("'", "")
-        statement += f" STARTS WITH '{sanitized_starts_with}'"
+        safe_starts_with = validate_starts_with_filter(
+            starts_with, "show_semantic_dimensions"
+        )
+        statement += f" STARTS WITH '{safe_starts_with}'"
 
     try:
         result = execute_query(statement, snowflake_service, bindvars)

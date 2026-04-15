@@ -27,6 +27,7 @@ logger = get_logger(__name__)
 
 P = ParamSpec("P")
 R = TypeVar("R")
+SAFE_STARTS_WITH_PATTERN = re.compile(r"^[A-Za-z0-9_.$ -]{1,255}$")
 
 
 def warn_deprecated_params() -> None:
@@ -66,6 +67,31 @@ def execute_query(statement: str, snowflake_service, bindvars: list[str] = []):
     ):
         cur.execute(statement, bindvars)
         return cur.fetchall()
+
+
+def is_verbose_logging_enabled() -> bool:
+    """Return whether verbose/debug logging is explicitly enabled."""
+    return os.getenv("SNOWFLAKE_MCP_VERBOSE", "").lower() in ("true", "1", "yes")
+
+
+def validate_starts_with_filter(starts_with: str, tool: str) -> str:
+    """Allow only a narrow safe prefix for SHOW ... STARTS WITH clauses."""
+    if not starts_with:
+        raise SnowflakeException(
+            tool=tool,
+            message="Invalid starts_with filter: value cannot be empty.",
+        )
+
+    if not SAFE_STARTS_WITH_PATTERN.fullmatch(starts_with):
+        raise SnowflakeException(
+            tool=tool,
+            message=(
+                "Invalid starts_with filter. Only letters, numbers, spaces, "
+                "periods, dollar signs, hyphens, and underscores are allowed."
+            ),
+        )
+
+    return starts_with
 
 
 def sanitize_tool_name(service_name: str) -> str:
@@ -451,17 +477,43 @@ class SnowflakeException(Exception):
         - 401: Authorization/authentication errors
         - Other codes: Generic error with status code
         """
-        if self.status_code is None:
-            return f"{self.tool} Error: An error has occurred.\n\nError Message: {self.message} "
+        if is_verbose_logging_enabled():
+            if self.status_code is None:
+                return (
+                    f"{self.tool} Error: An error has occurred.\n\n"
+                    f"Error Message: {self.message}"
+                )
 
-        else:
             if self.status_code == 400:
-                return f"{self.tool} Error: Bad request - please check your input parameters.\n\nError Message: {self.message} "
+                return (
+                    f"{self.tool} Error: Bad request - please check your input "
+                    f"parameters.\n\nError Message: {self.message}"
+                )
 
-            elif self.status_code == 401:
-                return f"{self.tool} Error: An authorization error occurred.\n\nError Message: {self.message} "
-            else:
-                return f"{self.tool} Error: An error has occurred.\n\nError Message: {self.message} \n Code: {self.status_code}"
+            if self.status_code == 401:
+                return (
+                    f"{self.tool} Error: An authorization error occurred.\n\n"
+                    f"Error Message: {self.message}"
+                )
+
+            return (
+                f"{self.tool} Error: An error has occurred.\n\n"
+                f"Error Message: {self.message}\nCode: {self.status_code}"
+            )
+
+        if self.status_code == 400:
+            return (
+                f"{self.tool} Error: Bad request - please check your input "
+                "parameters."
+            )
+
+        if self.status_code == 401:
+            return f"{self.tool} Error: An authorization error occurred."
+
+        return (
+            f"{self.tool} Error: An error has occurred. "
+            "Detailed diagnostics are hidden unless verbose logging is explicitly enabled."
+        )
 
 
 class MissingArgumentsException(Exception):
@@ -568,6 +620,16 @@ def get_login_params() -> dict:
             "Your account identifier. The account identifier does not include the snowflakecomputing.com suffix.",
         ],
         "host": ["--host", os.getenv("SNOWFLAKE_HOST"), "Host name."],
+        "database": [
+            "--database",
+            os.getenv("SNOWFLAKE_DATABASE"),
+            "Default database for the connection.",
+        ],
+        "schema": [
+            "--schema",
+            os.getenv("SNOWFLAKE_SCHEMA"),
+            "Default schema for the connection.",
+        ],
         "user": [
             "--user",
             "--username",
@@ -617,7 +679,7 @@ def get_login_params() -> dict:
         ],
         "authenticator": [
             "--authenticator",
-            None,  # Default is 'snowflake'. Don't want to pass this as only explicit argument later on.
+            os.getenv("SNOWFLAKE_AUTHENTICATOR"),
             """Authenticator for Snowflake:
 
 snowflake (default) to use the internal Snowflake authenticator.
