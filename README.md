@@ -1,4 +1,4 @@
-# Snowflake Cortex AI Model Context Protocol (MCP) Server
+statement_type# Snowflake Cortex AI Model Context Protocol (MCP) Server
 
 <a href="https://emerging-solutions-toolbox.streamlit.app/">
     <img src="https://github.com/user-attachments/assets/aa206d11-1d86-4f32-8a6d-49fe9715b098" alt="image" width="150" align="right";">
@@ -86,6 +86,7 @@ sql_statement_permissions: # List SQL statements to explicitly allow (True) or d
   - Merge: True
   - Rollback: True
   - Select: True
+  - Show: True
   - Transaction: True
   - TruncateTable: True
   - Unknown: False # To allow unknown or unmapped statement types, set Unknown: True.

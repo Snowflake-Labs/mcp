@@ -54,6 +54,8 @@ class TestGetStatementType:
     def test_column_colon_path_with_cast(self):
         assert get_statement_type("SELECT v:city::string FROM t") == "Select"
 
+    def test_show_agent(self):
+        assert get_statement_type("SHOW AGENTS IN SCHEMA ABC") == "Show"
 
 class TestSnowflakeSpecificSyntax:
     """Additional Snowflake dialect coverage: COPY INTO, LATERAL FLATTEN, etc."""
