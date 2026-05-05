@@ -74,6 +74,9 @@ def get_statement_type(sql_string):
 
         # The expression type is the class of the root node.
         statement_type = type(expression_tree).__name__
+        # Treat SHOW ... command as a separate type, to allow SHOW [AGENT] as an example
+        if statement_type == "Command" and sql_string.strip().upper().startswith("SHOW"):
+            return "Show"
 
         return statement_type
     except (
