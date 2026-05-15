@@ -32,7 +32,8 @@ def run_query(statement: str, snowflake_service):
     snowflake.connector.errors.Error
         If connection fails or SQL execution encounters an error
     """
-    try:
+
+    def _execute():
         with snowflake_service.get_connection(
             use_dict_cursor=True,
             session_parameters=snowflake_service.get_query_tag_param(),
@@ -42,7 +43,13 @@ def run_query(statement: str, snowflake_service):
         ):
             cur.execute(statement)
             return cur.fetchall()
+
+    try:
+        return _execute()
     except Exception as e:
+        if snowflake_service._is_token_expired_error(e):
+            snowflake_service._reconnect()
+            return _execute()
         raise SnowflakeException(
             tool="query_manager",
             message=f"Error executing query: {e}",

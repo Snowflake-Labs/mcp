@@ -54,6 +54,9 @@ query_tag = {"origin": "sf_sit", "name": "mcp_server"}
 
 logger = get_logger(server_name)
 
+# Snowflake error codes indicating expired/invalid session token
+_TOKEN_EXPIRED_ERROR_CODES = {390114, 390112}
+
 
 class SnowflakeService:
     """
@@ -306,6 +309,33 @@ class SnowflakeService:
         except Exception as e:
             logger.error(f"Error establishing persistent Snowflake connection: {e}")
             raise
+
+    @staticmethod
+    def _is_token_expired_error(exc: Exception) -> bool:
+        """Check if an exception indicates an expired Snowflake session token."""
+        errno = getattr(exc, "errno", None)
+        if errno is not None and errno in _TOKEN_EXPIRED_ERROR_CODES:
+            return True
+        cause = getattr(exc, "__cause__", None) or getattr(exc, "__context__", None)
+        if cause is not None:
+            cause_errno = getattr(cause, "errno", None)
+            if cause_errno is not None and cause_errno in _TOKEN_EXPIRED_ERROR_CODES:
+                return True
+        return False
+
+    def _reconnect(self) -> None:
+        """Close the stale connection and establish a fresh one."""
+        logger.info("Reconnecting to Snowflake due to expired session token...")
+        try:
+            if self.connection:
+                self.connection.close()
+        except Exception as close_err:
+            logger.debug(f"Error closing stale connection: {close_err}")
+
+        self.connection = None
+        self.connection = self._get_persistent_connection()
+        self.root = Root(self.connection)
+        logger.info("Successfully reconnected to Snowflake.")
 
     @contextmanager
     def get_connection(

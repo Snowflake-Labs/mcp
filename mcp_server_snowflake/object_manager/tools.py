@@ -189,7 +189,6 @@ def parse_object(target_object: Any, obj_type: supported_objects):
 
 
 def initialize_object_manager_tools(server: FastMCP, snowflake_service):
-    root = snowflake_service.root
     supported_objects_list = list(get_args(supported_objects))
     object_type_annotation = Annotated[
         supported_objects,
@@ -221,7 +220,13 @@ def initialize_object_manager_tools(server: FastMCP, snowflake_service):
     ):
         # If string is passed, parse JSON and create object
         target_object = parse_object(target_object, object_type)
-        return create_object(target_object, root, mode)
+        try:
+            return create_object(target_object, snowflake_service.root, mode)
+        except Exception as e:
+            if snowflake_service._is_token_expired_error(e):
+                snowflake_service._reconnect()
+                return create_object(target_object, snowflake_service.root, mode)
+            raise
 
     @server.tool(
         name="drop_object",
@@ -233,7 +238,13 @@ def initialize_object_manager_tools(server: FastMCP, snowflake_service):
         if_exists: bool = False,
     ):
         target_object = parse_object(target_object, object_type)
-        return drop_object(target_object, root, if_exists)
+        try:
+            return drop_object(target_object, snowflake_service.root, if_exists)
+        except Exception as e:
+            if snowflake_service._is_token_expired_error(e):
+                snowflake_service._reconnect()
+                return drop_object(target_object, snowflake_service.root, if_exists)
+            raise
 
     @server.tool(
         name="create_or_alter_object",
@@ -244,7 +255,13 @@ def initialize_object_manager_tools(server: FastMCP, snowflake_service):
         target_object: target_object_annotation,
     ):
         target_object = parse_object(target_object, object_type)
-        return create_or_alter_object(target_object, root)
+        try:
+            return create_or_alter_object(target_object, snowflake_service.root)
+        except Exception as e:
+            if snowflake_service._is_token_expired_error(e):
+                snowflake_service._reconnect()
+                return create_or_alter_object(target_object, snowflake_service.root)
+            raise
 
     @server.tool(
         name="describe_object",
@@ -255,7 +272,13 @@ def initialize_object_manager_tools(server: FastMCP, snowflake_service):
         target_object: target_object_annotation,
     ):
         target_object = parse_object(target_object, object_type)
-        return describe_object(target_object, root)
+        try:
+            return describe_object(target_object, snowflake_service.root)
+        except Exception as e:
+            if snowflake_service._is_token_expired_error(e):
+                snowflake_service._reconnect()
+                return describe_object(target_object, snowflake_service.root)
+            raise
 
     @server.tool(
         name="list_objects",

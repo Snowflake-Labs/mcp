@@ -57,15 +57,25 @@ def warn_deprecated_params() -> None:
 
 def execute_query(statement: str, snowflake_service, bindvars: list[str] = []):
     """Execute a Snowflake query and return the results using Python connector dictionary cursor."""
-    with snowflake_service.get_connection(
-        use_dict_cursor=True,
-        session_parameters=snowflake_service.get_query_tag_param(),
-    ) as (
-        con,
-        cur,
-    ):
-        cur.execute(statement, bindvars)
-        return cur.fetchall()
+
+    def _execute():
+        with snowflake_service.get_connection(
+            use_dict_cursor=True,
+            session_parameters=snowflake_service.get_query_tag_param(),
+        ) as (
+            con,
+            cur,
+        ):
+            cur.execute(statement, bindvars)
+            return cur.fetchall()
+
+    try:
+        return _execute()
+    except Exception as e:
+        if snowflake_service._is_token_expired_error(e):
+            snowflake_service._reconnect()
+            return _execute()
+        raise
 
 
 def sanitize_tool_name(service_name: str) -> str:

@@ -68,34 +68,39 @@ async def query_cortex_agent(
     Snowflake Cortex Agent REST API (for Agent Objects):
     https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-rest-api
     """
-    host, headers = construct_snowflake_post(
-        service=snowflake_service,
-        api_path=f"/api/v2/databases/{database_name}/schemas/{schema_name}/agents/{service_name}:run",
-    )
-
     payload = {
         "messages": [{"role": "user", "content": [{"type": "text", "text": query}]}],
         "tool_choice": {"type": "auto"},
     }
-    try:
-        response = requests.post(
-            host, headers=headers, json=payload, stream=True, timeout=120
-        )
-    except requests.exceptions.Timeout:
-        raise SnowflakeException(
-            tool="Cortex Agent",
-            message="Request timed out",
-        )
+    api_path = f"/api/v2/databases/{database_name}/schemas/{schema_name}/agents/{service_name}:run"
 
-    try:
-        response.raise_for_status()
-        return response
-    except Exception:
-        raise SnowflakeException(
-            tool="Cortex Agent",
-            status_code=response.status_code,
-            message=response.text,
+    for attempt in range(2):
+        host, headers = construct_snowflake_post(
+            service=snowflake_service, api_path=api_path
         )
+        try:
+            response = requests.post(
+                host, headers=headers, json=payload, stream=True, timeout=120
+            )
+        except requests.exceptions.Timeout:
+            raise SnowflakeException(
+                tool="Cortex Agent",
+                message="Request timed out",
+            )
+
+        if response.status_code == 401 and attempt == 0:
+            snowflake_service._reconnect()
+            continue
+
+        try:
+            response.raise_for_status()
+            return response
+        except Exception:
+            raise SnowflakeException(
+                tool="Cortex Agent",
+                status_code=response.status_code,
+                message=response.text,
+            )
 
 
 @sfse.snowflake_response(api="search")
@@ -149,11 +154,6 @@ async def query_cortex_search(
     Snowflake Cortex Search REST API:
     https://docs.snowflake.com/developer-guide/snowflake-rest-api/reference/cortex-search-service
     """
-    host, headers = construct_snowflake_post(
-        service=snowflake_service,
-        api_path=f"/api/v2/databases/{database_name}/schemas/{schema_name}/cortex-search-services/{service_name}:query",
-    )
-
     if filter_query is None:
         filter_query = {}
 
@@ -173,23 +173,34 @@ async def query_cortex_search(
 
     if isinstance(columns, list) and len(columns) > 0:
         payload["columns"] = columns
-    try:
-        response = requests.post(host, headers=headers, json=payload, timeout=60)
-    except requests.exceptions.Timeout:
-        raise SnowflakeException(
-            tool="Cortex Search",
-            message="Request timed out",
-        )
 
-    try:
-        response.raise_for_status()
-        return response
-    except Exception:
-        raise SnowflakeException(
-            tool="Cortex Search",
-            status_code=response.status_code,
-            message=response.text,
+    api_path = f"/api/v2/databases/{database_name}/schemas/{schema_name}/cortex-search-services/{service_name}:query"
+
+    for attempt in range(2):
+        host, headers = construct_snowflake_post(
+            service=snowflake_service, api_path=api_path
         )
+        try:
+            response = requests.post(host, headers=headers, json=payload, timeout=60)
+        except requests.exceptions.Timeout:
+            raise SnowflakeException(
+                tool="Cortex Search",
+                message="Request timed out",
+            )
+
+        if response.status_code == 401 and attempt == 0:
+            snowflake_service._reconnect()
+            continue
+
+        try:
+            response.raise_for_status()
+            return response
+        except Exception:
+            raise SnowflakeException(
+                tool="Cortex Search",
+                status_code=response.status_code,
+                message=response.text,
+            )
 
 
 @sfse.snowflake_response(api="analyst")
@@ -233,11 +244,6 @@ async def query_cortex_analyst(
     refers to a YAML file (starts with @ and ends with .yaml) or a semantic view.
     Currently configured for non-streaming responses.
     """
-    host, headers = construct_snowflake_post(
-        service=snowflake_service,
-        api_path="/api/v2/cortex/analyst/message",
-    )
-
     if semantic_model.startswith("@") and semantic_model.endswith(".yaml"):
         semantic_type = "semantic_model_file"
     else:
@@ -259,23 +265,33 @@ async def query_cortex_analyst(
         "stream": False,
     }
 
-    try:
-        response = requests.post(host, headers=headers, json=payload, timeout=120)
-    except requests.exceptions.Timeout:
-        raise SnowflakeException(
-            tool="Cortex Analyst",
-            message="Request timed out",
-        )
+    api_path = "/api/v2/cortex/analyst/message"
 
-    try:
-        response.raise_for_status()
-        return response
-    except Exception:
-        raise SnowflakeException(
-            tool="Cortex Analyst",
-            status_code=response.status_code,
-            message=response.text,
+    for attempt in range(2):
+        host, headers = construct_snowflake_post(
+            service=snowflake_service, api_path=api_path
         )
+        try:
+            response = requests.post(host, headers=headers, json=payload, timeout=120)
+        except requests.exceptions.Timeout:
+            raise SnowflakeException(
+                tool="Cortex Analyst",
+                message="Request timed out",
+            )
+
+        if response.status_code == 401 and attempt == 0:
+            snowflake_service._reconnect()
+            continue
+
+        try:
+            response.raise_for_status()
+            return response
+        except Exception:
+            raise SnowflakeException(
+                tool="Cortex Analyst",
+                status_code=response.status_code,
+                message=response.text,
+            )
 
 
 def initialize_cortex_agent_tool(server: FastMCP, snowflake_service):
