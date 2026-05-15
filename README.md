@@ -147,6 +147,24 @@ The MCP server supports multiple transport mechanisms. For detailed information 
 | `sse` (legacy) | Server-Sent Events | Streaming applications |
 | `streamable-http` | Streamable HTTP transport | Container deployments, remote servers |
 
+## Health Endpoint
+
+The MCP server provides a `/health` endpoint that returns a simple 200 OK response with a JSON body indicating the server's status. This endpoint is available when using HTTP-based transports (`http`, `sse`, `streamable-http`) and is useful for:
+
+- AWS Application Load Balancer (ALB) health checks
+- Kubernetes liveness and readiness probes
+- Docker health checks
+- Other orchestration systems
+
+**Example Response:**
+```json
+{
+  "status": "ok"
+}
+```
+
+This endpoint does not require authentication and can be accessed directly via HTTP GET:
+
 ## Usage
 
 ```bash
@@ -352,8 +370,11 @@ docker ps
 # Check container logs
 docker logs mcp-server-snowflake
 
-# Test endpoint (should return MCP server info)
+# Test MCP endpoint (should return MCP server info)
 curl http://localhost:9000/snowflake-mcp
+
+# Test health endpoint (should return {"status": "ok"})
+curl http://localhost:9000/health
 ```
 
 ## Docker Compose Deployment
@@ -401,8 +422,11 @@ docker-compose ps
 # View logs
 docker-compose logs
 
-# Test endpoint
+# Test MCP endpoint
 curl http://localhost:9000/snowflake-mcp
+
+# Test health endpoint
+curl http://localhost:9000/health
 ```
 
 ## Connecting MCP Clients to Containers

@@ -602,6 +602,18 @@ def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
             initialize_cortex_analyst_tool(server, snowflake_service)
 
 
+def add_health_endpoint(server: FastMCP):
+    """
+    Add a health endpoint to the server for compatibility with load balancers and orchestration systems.
+    
+    This endpoint returns a simple 200 OK response with a JSON body indicating the server's status.
+    It can be used by AWS ALB, Kubernetes, or other systems that expect a standard HTTP health check.
+    """
+    @server.app.get("/health")
+    async def health():
+        return {"status": "ok"}
+
+
 def main():
     args = parse_arguments()
 
@@ -622,6 +634,9 @@ def main():
 
     # Create server with lifespan that has access to args
     server = FastMCP("Snowflake MCP Server", lifespan=create_lifespan(args))
+    
+    # Add health endpoint for load balancers and orchestration systems
+    add_health_endpoint(server)
 
     try:
         logger.info("Starting Snowflake MCP Server...")
