@@ -1,15 +1,16 @@
-# Snowflake Cortex AI Model Context Protocol (MCP) Server
+# [DEPRECATED] Snowflake Cortex AI Model Context Protocol (MCP) Server
 
-<a href="https://emerging-solutions-toolbox.streamlit.app/">
-    <img src="https://github.com/user-attachments/assets/aa206d11-1d86-4f32-8a6d-49fe9715b098" alt="image" width="150" align="right";">
-</a>
+> [!CAUTION]
+> **This project is deprecated and no longer maintained.** Please migrate to the official [Snowflake MCP Server](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-mcp). The official server is actively developed, fully supported by Snowflake, and continues to add new features.
 
-> [!NOTE]
-> Snowflake now has an official [managed MCP server](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-mcp). This community version continues to be maintained and offers some different capabilities like semantic YAML file support, object management tools, and local deployment options.
+This community MCP server previously provided tooling for Snowflake Cortex AI, object management, and SQL orchestration. It is no longer supported. For all new and existing use cases, please use the official [Snowflake MCP Server](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-mcp) instead.
 
-This community MCP server provides tooling for Snowflake Cortex AI, object management, and SQL orchestration. When connected to an MCP Client (e.g. [Claude for Desktop](https://claude.ai/download), [fast-agent](https://fast-agent.ai/), [Cursor](https://www.cursor.com/)), users can leverage these features.
+---
 
-The MCP server currently supports the below capabilities:
+<details>
+<summary>Legacy documentation (for reference only)</summary>
+
+The MCP server supported the below capabilities:
 - **[Cortex Search](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search/cortex-search-overview)**: Query unstructured data in Snowflake as commonly used in Retrieval Augmented Generation (RAG) applications.
 - **[Cortex Analyst](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst)**: Query structured data in Snowflake via rich semantic modeling.
 - **[Cortex Agent](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents)**: Agentic orchestrator across structured and unstructured data retrieval
@@ -646,8 +647,6 @@ Only listed Cortex services will be made into tools as well.
 
 - Initial startup can take a few seconds as the server connects to Snowflake and validates your configuration. Subsequent tool calls should be much faster. If startup takes more than 30 seconds, check your network connection to Snowflake and verify your authentication credentials.
 
-# Bug Reports, Feedback, or Other Questions
-
-Please add issues to the GitHub repository.
+</details>
 
 <!-- mcp-name: io.github.Snowflake-Labs/mcp -->
