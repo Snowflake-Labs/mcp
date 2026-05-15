@@ -107,6 +107,7 @@ class SnowflakeService:
         transport: str,
         connection_params: dict,
         endpoint: str = "/mcp",
+        lazy_auth: bool = False,
     ):
         if service_config_file is None:
             raise ValueError(
@@ -141,9 +142,10 @@ class SnowflakeService:
         self._is_spcs_container = is_running_in_spcs_container()
 
         self.unpack_service_specs()
-        # Persist connection to avoid closing it after each request
-        self.connection = self._get_persistent_connection()
-        self.root = Root(self.connection)
+        self.connection = None
+        self.root = None
+        if not lazy_auth:
+            self._ensure_connection()
 
     def unpack_service_specs(self) -> None:
         """
@@ -188,6 +190,11 @@ class SnowflakeService:
             logger.error(f"Error extracting service specifications: {e}")
             raise
 
+    def _ensure_connection(self) -> None:
+        if self.connection is None:
+            self.connection = self._get_persistent_connection()
+            self.root = Root(self.connection)
+
     def get_api_headers(self) -> Dict[str, str]:
         """
         Get authentication headers for REST API calls.
@@ -205,6 +212,7 @@ class SnowflakeService:
             }
         else:
             # For external environments, we need to use the connection token
+            self._ensure_connection()
             return {
                 "Accept": "application/json, text/event-stream",
                 "Content-Type": "application/json",
@@ -225,6 +233,7 @@ class SnowflakeService:
                 "SNOWFLAKE_HOST", self.connection_params.get("account", "")
             )
         else:
+            self._ensure_connection()
             return self.connection.host
 
     @staticmethod
@@ -342,29 +351,7 @@ class SnowflakeService:
         """
 
         try:
-            if self.connection is None:
-                # Get connection parameters based on environment
-                if self._is_spcs_container:
-                    logger.info("Using SPCS container OAuth authentication")
-                    connection_params = {
-                        "host": os.getenv("SNOWFLAKE_HOST"),
-                        "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-                        "token": get_spcs_container_token(),
-                        "authenticator": "oauth",
-                    }
-                    connection_params = {
-                        k: v for k, v in connection_params.items() if v is not None
-                    }
-                else:
-                    logger.info("Using external authentication")
-                    connection_params = self.connection_params.copy()
-
-                self.connection = connect(
-                    **connection_params,
-                    session_parameters=session_parameters,
-                    client_session_keep_alive=False,
-                    paramstyle="qmark",
-                )
+            self._ensure_connection()
 
             cursor = (
                 self.connection.cursor(DictCursor)
@@ -508,6 +495,13 @@ def parse_arguments():
         help="Enable verbose/debug logging",
         default=False,
     )
+    parser.add_argument(
+        "--lazy-auth",
+        action="store_true",
+        required=False,
+        default=bool(os.getenv("SNOWFLAKE_MCP_LAZY_AUTH")),
+        help="Defer Snowflake authentication until first tool use (default: False)",
+    )
 
     return parser.parse_args()
 
@@ -542,6 +536,7 @@ def create_lifespan(args):
                 transport=args.transport,
                 connection_params=connection_params,
                 endpoint=endpoint or args.endpoint,
+                lazy_auth=args.lazy_auth,
             )
 
             # Initialize tools and resources now that we have the service
