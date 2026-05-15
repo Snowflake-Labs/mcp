@@ -122,8 +122,10 @@ Connection parameters can be passed as CLI arguments and/or environment variable
 |-----------|--------------|---------------------|-------------|
 | Account | --account | SNOWFLAKE_ACCOUNT | Account identifier (e.g. xy12345.us-east-1) |
 | Host | --host | SNOWFLAKE_HOST | Snowflake host URL |
+| Database | --database | SNOWFLAKE_DATABASE | Default database for the connection |
+| Schema | --schema | SNOWFLAKE_SCHEMA | Default schema for the connection |
 | User | --user, --username | SNOWFLAKE_USER | Username for authentication |
-| Password | --password | SNOWFLAKE_PASSWORD | Password or programmatic access token |
+| Password | --password | SNOWFLAKE_PASSWORD | Password for Snowflake authentication |
 | Role | --role | SNOWFLAKE_ROLE | Role to use for connection |
 | Warehouse | --warehouse | SNOWFLAKE_WAREHOUSE | Warehouse to use for queries |
 | Passcode in Password | --passcode-in-password | - | Whether passcode is embedded in password |
@@ -131,7 +133,7 @@ Connection parameters can be passed as CLI arguments and/or environment variable
 | Private Key | --private-key | SNOWFLAKE_PRIVATE_KEY | Private key for key pair authentication |
 | Private Key File | --private-key-file | SNOWFLAKE_PRIVATE_KEY_FILE | Path to private key file |
 | Private Key Password | --private-key-file-pwd | SNOWFLAKE_PRIVATE_KEY_FILE_PWD | Password for encrypted private key |
-| Authenticator | --authenticator | - | Authentication type (default: snowflake) |
+| Authenticator | --authenticator | SNOWFLAKE_AUTHENTICATOR | Authentication type (default: snowflake) |
 | Connection Name | --connection-name | - | Name of connection from connections.toml (or config.toml) file |
 
 > [!WARNING]
@@ -176,6 +178,20 @@ export SNOWFLAKE_MCP_ENDPOINT="/my-mcp"
 uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http
 ```
 
+## Secure Local Development Defaults
+
+For least-privilege local development, prefer:
+
+- `services/configuration.yaml` with only `Select` and `Describe` enabled
+- `SNOWFLAKE_AUTHENTICATOR=externalbrowser`
+- `SNOWFLAKE_ROLE=INTERN_MCP_ROLE`
+- `SNOWFLAKE_WAREHOUSE=INTERN_MCP_WH`
+- `SNOWFLAKE_DATABASE=DATA_EXPLORATION`
+- `SNOWFLAKE_SCHEMA=MCP_EXPLORATION`
+- `stdio` transport only
+
+Avoid plaintext passwords in `.env`, avoid `SNOWFLAKE_PAT`, and avoid exposing `streamable-http` on port `9000` for local intern workflows.
+
 # Using with MCP Clients
 
 The MCP server is client-agnostic and will work with most MCP Clients that support basic functionality for MCP tools and (optionally) resources. Below are examples for local installation. For connecting to containerized deployments, see [Connecting MCP Clients to Containers](#connecting-mcp-clients-to-containers).
@@ -196,9 +212,7 @@ Set the path to the service configuration file and configure your connection met
       "args": [
         "snowflake-labs-mcp",
         "--service-config-file",
-        "<path_to_file>/tools_config.yaml",
-        "--connection-name",
-        "default"
+        "<path_to_file>/configuration.yaml"
       ]
     }
   }
@@ -216,9 +230,7 @@ Register the MCP server in Cursor by opening Cursor and navigating to Settings -
       "args": [
         "snowflake-labs-mcp",
         "--service-config-file",
-        "<path_to_file>/tools_config.yaml",
-        "--connection-name",
-        "default"
+        "<path_to_file>/configuration.yaml"
       ]
     }
   }
@@ -241,7 +253,7 @@ mcp:
     servers:
         mcp-server-snowflake:
             command: "uvx"
-            args: ["snowflake-labs-mcp", "--service-config-file", "<path_to_file>/tools_config.yaml", "--connection-name", "default"]
+            args: ["snowflake-labs-mcp", "--service-config-file", "<path_to_file>/configuration.yaml"]
 ```
 
 <img src="https://sfquickstarts.s3.us-west-1.amazonaws.com/misc/mcp/fast-agent.gif" width="800"/>
@@ -261,9 +273,7 @@ command = "uvx"
 args = [
     "snowflake-labs-mcp",
     "--service-config-file",
-    "<path_to_file>/tools_config.yaml",
-    "--connection-name",
-    "default"
+    "<path_to_file>/configuration.yaml"
 ]
 ```
 After editing, the snowflake mcp should appear in the output of `codex mcp list` run from the terminal.
@@ -271,6 +281,8 @@ After editing, the snowflake mcp should appear in the output of `codex mcp list`
 # Container Deployment
 
 Deploy the MCP server as a container for remote access or production environments. This guide provides step-by-step instructions for both Docker and Docker Compose deployments.
+
+For the least-privilege intern workflow in this fork, prefer host-side `stdio` execution with `externalbrowser` SSO instead of these HTTP-oriented container examples.
 
 ## Docker Deployment
 
@@ -280,7 +292,7 @@ Follow these steps to deploy the MCP server using Docker:
 Create a directory for MCP configuration and copy the template:
 ```bash
 mkdir -p ${HOME}/.mcp/
-cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml
+cp services/configuration.yaml ${HOME}/.mcp/configuration.yaml
 ```
 
 ### Step 2: Configure Services
@@ -288,7 +300,7 @@ Edit the configuration file to match your environment:
 ```bash
 # Edit the configuration file as needed
 # Update service names, database/schema references, and enable desired features
-nano ${HOME}/.mcp/tools_config.yaml
+nano ${HOME}/.mcp/configuration.yaml
 ```
 
 ### Step 3: Build Container Image
@@ -326,8 +338,9 @@ docker run -d \
   -e SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT} \
   -e SNOWFLAKE_USER=${SNOWFLAKE_USER} \
   -e SNOWFLAKE_PASSWORD=${SNOWFLAKE_PASSWORD} \
-  -v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro \
-  mcp-server-snowflake
+  -v ${HOME}/.mcp/configuration.yaml:/app/services/configuration.yaml:ro \
+  mcp-server-snowflake \
+  --transport streamable-http --endpoint /snowflake-mcp
 ```
 
 **For Key Pair Authentication:**
@@ -339,8 +352,9 @@ docker run -d \
   -e SNOWFLAKE_USER=${SNOWFLAKE_USER} \
   -e SNOWFLAKE_PRIVATE_KEY="${SNOWFLAKE_PRIVATE_KEY}" \
   -e SNOWFLAKE_PRIVATE_KEY_FILE_PWD=${SNOWFLAKE_PRIVATE_KEY_FILE_PWD} \
-  -v ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro \
-  mcp-server-snowflake
+  -v ${HOME}/.mcp/configuration.yaml:/app/services/configuration.yaml:ro \
+  mcp-server-snowflake \
+  --transport streamable-http --endpoint /snowflake-mcp
 ```
 
 ### Step 6: Verify Deployment
@@ -364,14 +378,14 @@ Follow these steps for a simplified deployment using Docker Compose:
 Create the configuration directory and copy the template:
 ```bash
 mkdir -p ${HOME}/.mcp/
-cp services/configuration.yaml ${HOME}/.mcp/tools_config.yaml
+cp services/configuration.yaml ${HOME}/.mcp/configuration.yaml
 ```
 
 ### Step 2: Configure Services
 Edit the configuration file to match your environment:
 ```bash
 # Update service configurations as needed
-nano ${HOME}/.mcp/tools_config.yaml
+nano ${HOME}/.mcp/configuration.yaml
 ```
 
 ### Step 3: Set Environment Variables
@@ -542,7 +556,7 @@ The [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) is a p
 Launch the inspector with your MCP server configuration:
 
 ```bash
-npx @modelcontextprotocol/inspector uvx snowflake-labs-mcp --service-config-file <path_to_file>/tools_config.yaml --connection-name "default"
+npx @modelcontextprotocol/inspector uvx snowflake-labs-mcp --service-config-file <path_to_file>/configuration.yaml
 ```
 
 ### What the Inspector Shows You
@@ -558,7 +572,7 @@ Once launched, the inspector will open a web interface where you can:
 ### Common Troubleshooting Scenarios
 
 **Configuration File Issues:**
-- If tools don't appear, check your `tools_config.yaml` syntax
+- If tools don't appear, check your `configuration.yaml` syntax
 - Verify that service names and database/schema references are correct
 - Ensure `other_services` are set to `True` for the tool groups you want
 
@@ -583,7 +597,7 @@ Once launched, the inspector will open a web interface where you can:
 
 Enable debug logging with `--verbose` or set `SNOWFLAKE_MCP_VERBOSE=true`:
 ```bash
-uvx snowflake-labs-mcp --service-config-file <path_to_file>/tools_config.yaml --connection-name "default" --verbose
+uvx snowflake-labs-mcp --service-config-file <path_to_file>/configuration.yaml --verbose
 ```
 
 # FAQs
@@ -600,7 +614,7 @@ Only listed Cortex services will be made into tools as well.
 
 #### Can I use a Programmatic Access Token (PAT) instead of a password?
 
-- Yes. Pass it to the CLI flag --password or set as environment variable SNOWFLAKE_PASSWORD.
+- PAT support is deprecated in this project and not recommended for the locked-down intern workflow. Prefer `externalbrowser` SSO or key-pair authentication.
 
 #### How do I try this?
 
@@ -612,7 +626,7 @@ Only listed Cortex services will be made into tools as well.
 
 #### I'm receiving permission errors from my tool calls.
 
-- If using a Programmatic Access Tokens, note that they do not evaluate secondary roles. When creating them, please select a single role that has access to all services and their underlying objects OR select any role. A new PAT will need to be created to alter this property.
+- If you are still using a legacy PAT, note that it does not evaluate secondary roles. For the locked-down intern workflow, switch to `externalbrowser` SSO or key-pair auth instead of relying on PAT behavior.
 
 #### How many Cortex Search or Cortex Analysts can I add?
 

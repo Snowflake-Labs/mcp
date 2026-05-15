@@ -30,25 +30,26 @@ analyst_services: # List all Cortex Analyst semantic models/views
     description: > # Describe contents of the analyst service"
       "<Analyst service that ...>"
 other_services: # Set desired tool groups to True to enable tools for that group
-  object_manager: True # Perform basic operations against Snowflake's most common objects such as creation, dropping, updating, and more.
+  object_manager: False # Perform basic operations against Snowflake's most common objects such as creation, dropping, updating, and more.
   query_manager: True # Run LLM-generated SQL managed by user-configured permissions.
-  semantic_manager: True # Discover and query Snowflake Semantic Views and their components.
+  semantic_manager: False # Discover and query Snowflake Semantic Views and their components.
 sql_statement_permissions: # List SQL statements to explicitly allow (True) or disallow (False).
   # - All: True # To allow everything, uncomment and set All: True.
-  - Alter: True
-  - Command: True
-  - Comment: True
-  - Commit: True
-  - Create: True
-  - Delete: True
+  - Alter: False
+  - Command: False
+  - Comment: False
+  - Commit: False
+  - Create: False
+  - Delete: False
   - Describe: True
-  - Drop: True
-  - Insert: True
-  - Merge: True
-  - Rollback: True
+  - Drop: False
+  - Insert: False
+  - Merge: False
+  - Rollback: False
   - Select: True
-  - Transaction: True
-  - TruncateTable: True
+  - Show: False
+  - Transaction: False
+  - TruncateTable: False
   - Unknown: False # To allow unknown or unmapped statement types, set Unknown: True.
-  - Update: True
-  - Use: True
+  - Update: False
+  - Use: False

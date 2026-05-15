@@ -41,6 +41,7 @@ from mcp_server_snowflake.server_utils import initialize_middleware
 from mcp_server_snowflake.utils import (
     cleanup_snowflake_service,
     get_login_params,
+    is_verbose_logging_enabled,
     load_tools_config_resource,
     unpack_sql_statement_permissions,
     warn_deprecated_params,
@@ -606,11 +607,7 @@ def main():
     args = parse_arguments()
 
     # Configure logging level based on verbose flag or environment variable
-    if args.verbose or os.getenv("SNOWFLAKE_MCP_VERBOSE", "").lower() in (
-        "true",
-        "1",
-        "yes",
-    ):
+    if args.verbose or is_verbose_logging_enabled():
         import logging
 
         logging.getLogger().setLevel(logging.DEBUG)

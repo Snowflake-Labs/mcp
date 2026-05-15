@@ -22,7 +22,11 @@ from mcp_server_snowflake.object_manager.objects import (
 from mcp_server_snowflake.object_manager.prompts import (
     get_object_mgmt_prompt,
 )
-from mcp_server_snowflake.utils import SnowflakeException, execute_query
+from mcp_server_snowflake.utils import (
+    SnowflakeException,
+    execute_query,
+    validate_starts_with_filter,
+)
 
 
 def get_class_name(object_type: Any) -> str:
@@ -135,9 +139,8 @@ def list_objects(
         )
 
     if starts_with:
-        # sanitizing string manually because bind variables are not supported here
-        sanitized_starts_with = starts_with.replace("'", "")
-        statement += f" STARTS WITH '{sanitized_starts_with}'"
+        safe_starts_with = validate_starts_with_filter(starts_with, "list_objects")
+        statement += f" STARTS WITH '{safe_starts_with}'"
 
     try:
         result = execute_query(statement, snowflake_service, bindvars)

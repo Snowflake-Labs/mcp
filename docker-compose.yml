@@ -21,8 +21,14 @@ services:
     environment:
       - SNOWFLAKE_ACCOUNT=${SNOWFLAKE_ACCOUNT}
       - SNOWFLAKE_USER=${SNOWFLAKE_USER}
+      - SNOWFLAKE_AUTHENTICATOR=${SNOWFLAKE_AUTHENTICATOR}
+      - SNOWFLAKE_ROLE=${SNOWFLAKE_ROLE}
+      - SNOWFLAKE_WAREHOUSE=${SNOWFLAKE_WAREHOUSE}
+      - SNOWFLAKE_DATABASE=${SNOWFLAKE_DATABASE}
+      - SNOWFLAKE_SCHEMA=${SNOWFLAKE_SCHEMA}
+      - SNOWFLAKE_MCP_VERBOSE=${SNOWFLAKE_MCP_VERBOSE}
     volumes:
-      - ${HOME}/.mcp/tools_config.yaml:/app/services/tools_config.yaml:ro
-    ports:
-      - "9000:9000"
+      - ${HOME}/.mcp/configuration.yaml:/app/services/configuration.yaml:ro
+    stdin_open: true
+    tty: true
     restart: unless-stopped
