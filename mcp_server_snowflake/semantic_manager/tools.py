@@ -185,11 +185,12 @@ def write_semantic_view_query(
     bindvars = [f"{database_name}.{schema_name}.{view_name}"]
 
     # Add clauses in order (affects output column order)
+    # Use AS alias to preserve column names when using bind variables
     if dimensions:
         statement += " DIMENSIONS"
         for index, expr in enumerate(dimensions):
             is_last = index == len(dimensions) - 1
-            statement += " identifier(?)"
+            statement += f" identifier(?) AS {expr.name}"
             bindvars.extend([f"{expr.table}.{expr.name}"])
             if not is_last:
                 statement += ","
@@ -198,7 +199,7 @@ def write_semantic_view_query(
         statement += " METRICS"
         for index, expr in enumerate(metrics):
             is_last = index == len(metrics) - 1
-            statement += " identifier(?)"
+            statement += f" identifier(?) AS {expr.name}"
             bindvars.extend([f"{expr.table}.{expr.name}"])
             if not is_last:
                 statement += ","
@@ -207,7 +208,7 @@ def write_semantic_view_query(
         statement += " FACTS"
         for index, expr in enumerate(facts):
             is_last = index == len(facts) - 1
-            statement += " identifier(?)"
+            statement += f" identifier(?) AS {expr.name}"
             bindvars.extend([f"{expr.table}.{expr.name}"])
             if not is_last:
                 statement += ","
