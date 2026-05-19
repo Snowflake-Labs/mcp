@@ -176,6 +176,24 @@ export SNOWFLAKE_MCP_ENDPOINT="/my-mcp"
 uvx snowflake-labs-mcp --service-config-file config.yaml --transport streamable-http
 ```
 
+## Result Format
+
+By default, query results are returned as a JSON array of objects, where column names repeat for every row. For large result sets this can be verbose and token-intensive. The `--result-format` option lets you select a more compact representation.
+
+| Parameter | CLI Argument | Environment Variable | Default | Options |
+|-----------|--------------|---------------------|---------|---------|
+| Result Format | --result-format | SNOWFLAKE_MCP_RESULT_FORMAT | json | `json`, `csv` |
+
+**CSV format** returns results as a CSV string with a header row. This can significantly reduce token usage for large result sets since column names are only written once.
+
+```bash
+# Use CSV format for more compact query results
+uvx snowflake-labs-mcp --service-config-file config.yaml --result-format csv
+```
+
+> [!NOTE]
+> CSV format applies to SQL query results from all query tools. It does not apply to Cortex Search or Cortex Agent responses. CSV output loses type information — numbers, booleans, and nulls are all represented as strings.
+
 # Using with MCP Clients
 
 The MCP server is client-agnostic and will work with most MCP Clients that support basic functionality for MCP tools and (optionally) resources. Below are examples for local installation. For connecting to containerized deployments, see [Connecting MCP Clients to Containers](#connecting-mcp-clients-to-containers).
