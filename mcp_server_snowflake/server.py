@@ -22,6 +22,8 @@ from fastmcp import FastMCP
 from fastmcp.utilities.logging import get_logger
 from snowflake.connector import DictCursor, connect
 from snowflake.core import Root
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from mcp_server_snowflake.cortex_services.tools import (
     initialize_cortex_agent_tool,
@@ -602,6 +604,19 @@ def initialize_tools(snowflake_service: SnowflakeService, server: FastMCP):
             initialize_cortex_analyst_tool(server, snowflake_service)
 
 
+def add_health_endpoint(server: FastMCP):
+    """
+    Add a health endpoint to the server for compatibility with load balancers and orchestration systems.
+
+    This endpoint returns a simple 200 OK response with a JSON body indicating the server's status.
+    It can be used by AWS ALB, Kubernetes, or other systems that expect a standard HTTP health check.
+    """
+
+    @server.custom_route("/health", methods=["GET"])
+    async def health(request: Request) -> JSONResponse:
+        return JSONResponse({"status": "ok"})
+
+
 def main():
     args = parse_arguments()
 
@@ -634,6 +649,8 @@ def main():
             host = os.environ.get("SNOWFLAKE_MCP_HOST", args.server_host)
             port = int(os.environ.get("SNOWFLAKE_MCP_PORT", str(args.port)))
             endpoint = os.environ.get("SNOWFLAKE_MCP_ENDPOINT", args.endpoint)
+            # Add health endpoint for load balancers and orchestration systems
+            add_health_endpoint(server)
             logger.info(f"Starting server with transport: {args.transport}")
             server.run(transport=args.transport, host=host, port=port, path=endpoint)
         else:
